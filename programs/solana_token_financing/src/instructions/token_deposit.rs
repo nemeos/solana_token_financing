@@ -8,7 +8,7 @@ use crate::states::vault_account::VaultAccount;
 pub fn token_deposit(ctx: Context<TokenDeposit>, amount: u64) -> Result<()> {
     let cpi_accounts = Transfer {
         from: ctx.accounts.seller_token_account.to_account_info(),
-        to: ctx.accounts.token_account.to_account_info(),
+        to: ctx.accounts.vault_token_account.to_account_info(),
         authority: ctx.accounts.seller.to_account_info(),
     };
 
@@ -34,8 +34,8 @@ pub struct TokenDeposit<'info> {
     seller: Signer<'info>,
 
     #[account(mut)]
-    token_account: Account<'info, TokenAccount>,
-    #[account(mut, has_one = token_account)]
+    vault_token_account: Account<'info, TokenAccount>,
+    #[account(mut, has_one = vault_token_account)]
     vault_account: Account<'info, VaultAccount>,
 
     token_program: Program<'info, Token>,

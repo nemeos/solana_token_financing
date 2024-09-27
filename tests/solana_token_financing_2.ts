@@ -92,7 +92,7 @@ describe("test 2", () => {
         let txTokenDeposit = await program.methods
             .tokenDeposit(new BN(100))
             .accounts({
-                tokenAccount: vaultAccount.tokenAccount,
+                vaultTokenAccount: vaultAccount.vaultTokenAccount,
                 vaultAccount: vaultAccountAddr,
                 seller: sellerKeypair.publicKey,
                 sellerTokenAccount: sellerTokenAccount.address,
@@ -123,7 +123,7 @@ describe("test 2", () => {
             .accounts({
                 seller: sellerKeypair.publicKey,
                 borrower: borrowerKeypair.publicKey,
-                tokenAccount: vaultAccount.tokenAccount,
+                vaultTokenAccount: vaultAccount.vaultTokenAccount,
                 vaultAccount: vaultAccountAddr,
                 mint: mint,
             })
@@ -136,8 +136,8 @@ describe("test 2", () => {
         console.log(`Available tokens: `, vaults3[0].account.availableTokens.toString());
         const sellerAccountInfo3 = await getAccount(connection, sellerTokenAccount.address);
         console.log('Seller token account balance:', Number(sellerAccountInfo3.amount));
-        const vaultAccoutInfo = await getAccount(connection, vaultAccount.tokenAccount);
-        console.log('Vault token account balance:', Number(vaultAccoutInfo.amount));
+        const vaultAccountInfo = await getAccount(connection, vaultAccount.vaultTokenAccount);
+        console.log('Vault token account balance:', Number(vaultAccountInfo.amount));
         let [borrowerTokenAccount] = PublicKey.findProgramAddressSync(
             [Buffer.from("nemeos_borrower_token_account"), mint.toBuffer(), borrowerKeypair.publicKey.toBuffer()],
             program.programId
@@ -153,7 +153,7 @@ describe("test 2", () => {
             .accounts({
                 seller: sellerKeypair.publicKey,
                 borrower: borrowerKeypair.publicKey,
-                tokenAccount: vaultAccount.tokenAccount,
+                vaultTokenAccount: vaultAccount.vaultTokenAccount,
                 vaultAccount: vaultAccountAddr,
                 mint: mint,
             })
@@ -166,8 +166,8 @@ describe("test 2", () => {
         console.log(`Available tokens: `, vaults4[0].account.availableTokens.toString());
         const sellerAccountInfo4 = await getAccount(connection, sellerTokenAccount.address);
         console.log('Seller token account balance:', Number(sellerAccountInfo4.amount));
-        const vaultAccoutInfo4 = await getAccount(connection, vaultAccount.tokenAccount);
-        console.log('Vault token account balance:', Number(vaultAccoutInfo4.amount));
+        const vaultAccountInfo4 = await getAccount(connection, vaultAccount.vaultTokenAccount);
+        console.log('Vault token account balance:', Number(vaultAccountInfo4.amount));
         const borrowerAccountInfo4 = await getAccount(connection, borrowerTokenAccount);
         console.log('Borrower token account balance:', Number(borrowerAccountInfo4.amount));
         const loans4 = await program.account.loanAccount.all();
@@ -179,7 +179,7 @@ describe("test 2", () => {
         //     .accounts({
         //         seller: sellerKeypair.publicKey,
         //         borrower: borrowerKeypair.publicKey,
-        //         tokenAccount: vaultAccount.tokenAccount,
+        //         vaultTokenAccount: vaultAccount.vaultTokenAccount,
         //         vaultAccount: vaultAccountAddr,
         //         mint: mint,
         //     })

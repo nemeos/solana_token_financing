@@ -9,7 +9,7 @@ pub fn initialize_token_vault(
     interest_rate: u8,
 ) -> Result<()> {
     let vault_account = &mut ctx.accounts.vault_account;
-    vault_account.token_account = ctx.accounts.vault_token_account.key();
+    vault_account.vault_token_account = ctx.accounts.vault_token_account.key();
     vault_account.nemeos = ctx.accounts.nemeos.key();
     vault_account.available_tokens = 0;
     vault_account.interest_rate = interest_rate;

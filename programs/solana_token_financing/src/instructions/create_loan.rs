@@ -38,7 +38,7 @@ pub fn create_loan(
 
     // Transfer tokens from token vault to borrower
     let transfer_instruction = Transfer {
-        from: ctx.accounts.token_account.to_account_info(),
+        from: ctx.accounts.vault_token_account.to_account_info(),
         to: ctx.accounts.borrower_token_account.to_account_info(),
         authority: ctx.accounts.token_account_owner_pda.to_account_info(),
     };
@@ -99,8 +99,8 @@ pub struct CreateLoan<'info> {
     pub borrower: Signer<'info>,
 
     #[account(mut)]
-    pub token_account: Account<'info, TokenAccount>,
-    #[account(mut, has_one = token_account)]
+    pub vault_token_account: Account<'info, TokenAccount>,
+    #[account(mut, has_one = vault_token_account)]
     pub vault_account: Account<'info, VaultAccount>,
 
     pub mint: Account<'info, Mint>,
