@@ -43,16 +43,3 @@ pub mod solana_token_financing {
         instructions::payment(ctx)
     }
 }
-
-// #[account]
-// #[derive(InitSpace)]
-// pub struct Loan {
-//     borrower: Pubkey,
-//     seller: Pubkey,
-//     token_id: Pubkey,
-//     period_duration: u64,
-//     period_end: u64,
-//     nb_of_payments: u8,
-//     payment_amount: u32,
-//     nb_of_tokens_per_payment: u8,
-// }
