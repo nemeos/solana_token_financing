@@ -7,4 +7,10 @@ pub enum ErrorCode {
 
     #[msg("The vault token account does not match the vault account.")]
     InvalidVaultTokenAccount,
+
+    #[msg("The payment is too late.")]
+    TooLate,
+
+    #[msg("The loan is already fully paid.")]
+    NoRemainingPayments,
 }

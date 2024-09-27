@@ -38,6 +38,10 @@ pub mod solana_token_financing {
             period_duration,
         )
     }
+
+    pub fn payment(ctx: Context<Payment>) -> Result<()> {
+        instructions::payment(ctx)
+    }
 }
 
 // #[account]

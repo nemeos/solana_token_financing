@@ -113,7 +113,7 @@ describe("test 2", () => {
         // Airdrops
         let txBorrowerAirdrop = await connection.requestAirdrop(
             borrowerKeypair.publicKey,
-            20 * LAMPORTS_PER_SOL
+            50 * LAMPORTS_PER_SOL
         );
         await connection.confirmTransaction(txBorrowerAirdrop);
 
@@ -145,6 +145,47 @@ describe("test 2", () => {
         console.log('Borrower token account balance:', Number(borrowerAccountInfo3.amount));
         const loans = await program.account.loanAccount.all();
         console.log(`Loans: `, loans);
+
+        // TEST : payment
+        let txPayment = await program.methods
+            .payment()
+            .accounts({
+                seller: sellerKeypair.publicKey,
+                borrower: borrowerKeypair.publicKey,
+                tokenAccount: vaultAccount.tokenAccount,
+                vaultAccount: vaultAccountAddr,
+                mint: mint,
+            })
+            .signers([borrowerKeypair])
+            .rpc();
+        await connection.confirmTransaction(txPayment);
+
+        const vaults4 = await program.account.vaultAccount.all();
+        console.log(`Vaults result: `, vaults4);
+        console.log(`Available tokens: `, vaults4[0].account.availableTokens.toString());
+        const sellerAccountInfo4 = await getAccount(connection, sellerTokenAccount.address);
+        console.log('Seller token account balance:', Number(sellerAccountInfo4.amount));
+        const vaultAccoutInfo4 = await getAccount(connection, vaultAccount.tokenAccount);
+        console.log('Vault token account balance:', Number(vaultAccoutInfo4.amount));
+        const borrowerAccountInfo4 = await getAccount(connection, borrowerTokenAccount);
+        console.log('Borrower token account balance:', Number(borrowerAccountInfo4.amount));
+        const loans4 = await program.account.loanAccount.all();
+        console.log(`Loans: `, loans4);
+
+        // // A second payment fails because the loan is already paid
+        // let txPayment2 = await program.methods
+        //     .payment()
+        //     .accounts({
+        //         seller: sellerKeypair.publicKey,
+        //         borrower: borrowerKeypair.publicKey,
+        //         tokenAccount: vaultAccount.tokenAccount,
+        //         vaultAccount: vaultAccountAddr,
+        //         mint: mint,
+        //     })
+        //     .signers([borrowerKeypair])
+        //     .rpc();
+        // await connection.confirmTransaction(txPayment);
+
 
     });
 });
