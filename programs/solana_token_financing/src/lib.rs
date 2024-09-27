@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use anchor_spl::token::{Mint, Token, TokenAccount};
+use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
 declare_id!("5HfozzNSUjtouPPAUJrqPgC4wnwsqg7akvVstjY11Vec");
 
@@ -16,6 +16,26 @@ pub mod solana_token_financing {
         vault_account.token_account = ctx.accounts.vault_token_account.key();
         vault_account.owner = nemeos;
         vault_account.available_tokens = 0;
+        Ok(())
+    }
+
+    pub fn token_deposit(ctx: Context<TokenDeposit>, amount: u64) -> Result<()> {
+        let cpi_accounts = Transfer {
+            from: ctx.accounts.seller_token_account.to_account_info(),
+            to: ctx.accounts.token_account.to_account_info(),
+            authority: ctx.accounts.seller.to_account_info(),
+        };
+
+        let cpi_program = ctx.accounts.token_program.to_account_info();
+        let cpi_context = CpiContext::new(cpi_program, cpi_accounts);
+        token::transfer(cpi_context, amount)?;
+
+        let vault_account = &mut ctx.accounts.vault_account;
+        vault_account.available_tokens = vault_account
+            .available_tokens
+            .checked_add(amount)
+            .ok_or(ErrorCode::Overflow)?;
+
         Ok(())
     }
 }
@@ -80,4 +100,30 @@ pub struct VaultAccount {
     token_account: Pubkey,
     owner: Pubkey, // Nemeos
     available_tokens: u64,
+}
+
+#[derive(Accounts)]
+pub struct TokenDeposit<'info> {
+    #[account(mut)]
+    pub token_account: Account<'info, TokenAccount>,
+
+    #[account(mut)]
+    pub seller_token_account: Account<'info, TokenAccount>,
+
+    #[account(mut)]
+    pub seller: Signer<'info>,
+
+    #[account(mut, has_one = token_account)]
+    pub vault_account: Account<'info, VaultAccount>,
+
+    pub token_program: Program<'info, Token>,
+}
+
+#[error_code]
+pub enum ErrorCode {
+    #[msg("An overflow occurred.")]
+    Overflow,
+
+    #[msg("The vault token account does not match the vault account.")]
+    InvalidVaultTokenAccount,
 }
