@@ -4,11 +4,15 @@ use anchor_spl::token::{Mint, Token, TokenAccount};
 
 use crate::states::vault_account::{TokenAccountOwnerPda, VaultAccount};
 
-pub fn initialize_token_vault(ctx: Context<InitializeTokenAccount>, nemeos: Pubkey) -> Result<()> {
+pub fn initialize_token_vault(
+    ctx: Context<InitializeTokenAccount>,
+    interest_rate: u8,
+) -> Result<()> {
     let vault_account = &mut ctx.accounts.vault_account;
     vault_account.token_account = ctx.accounts.vault_token_account.key();
-    vault_account.owner = nemeos;
+    vault_account.nemeos = ctx.accounts.nemeos.key();
     vault_account.available_tokens = 0;
+    vault_account.interest_rate = interest_rate;
     Ok(())
 }
 
@@ -46,6 +50,7 @@ pub struct InitializeTokenAccount<'info> {
 
     #[account(mut)]
     seller: Signer<'info>,
+    nemeos: Signer<'info>,
     system_program: Program<'info, System>,
     token_program: Program<'info, Token>,
 }

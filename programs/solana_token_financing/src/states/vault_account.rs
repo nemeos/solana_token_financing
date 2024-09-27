@@ -7,6 +7,7 @@ pub struct TokenAccountOwnerPda {}
 #[derive(InitSpace)]
 pub struct VaultAccount {
     pub token_account: Pubkey,
-    pub owner: Pubkey, // Nemeos
+    pub nemeos: Pubkey,
     pub available_tokens: u64,
+    pub interest_rate: u8,
 }

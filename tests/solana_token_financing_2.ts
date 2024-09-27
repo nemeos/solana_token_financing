@@ -43,12 +43,13 @@ describe("test 2", () => {
         console.log('Mint address:', mint.toBase58());
 
         let txInitVault = await program.methods
-            .initializeTokenVault(nemeosKeypair.publicKey)
+            .initializeTokenVault(new BN(3))
             .accounts({
                 mint: mint,
                 seller: sellerKeypair.publicKey,
+                nemeos: nemeosKeypair.publicKey,
             })
-            .signers([sellerKeypair])
+            .signers([sellerKeypair, nemeosKeypair])
             .rpc();
         await connection.confirmTransaction(txInitVault);
 

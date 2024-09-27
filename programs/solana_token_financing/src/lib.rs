@@ -14,9 +14,9 @@ pub mod solana_token_financing {
 
     pub fn initialize_token_vault(
         ctx: Context<InitializeTokenAccount>,
-        nemeos: Pubkey,
+        interest_rate: u8,
     ) -> Result<()> {
-        instructions::initialize_token_vault(ctx, nemeos)
+        instructions::initialize_token_vault(ctx, interest_rate)
     }
 
     pub fn token_deposit(ctx: Context<TokenDeposit>, amount: u64) -> Result<()> {
