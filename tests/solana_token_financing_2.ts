@@ -56,7 +56,7 @@ describe("test 2", () => {
         console.log(`Seller balance (SOL): ${balanceSeller / anchor.web3.LAMPORTS_PER_SOL} SOL`);
 
         const vaults = await program.account.vaultAccount.all();
-        console.log(`Proposal result: `, vaults);
+        console.log(`Vaults: `, vaults);
 
         // TEST : deposit_tokens
         // Create an associated token account for the seller
@@ -105,5 +105,46 @@ describe("test 2", () => {
         console.log(`Available tokens: `, vaults2[0].account.availableTokens.toString());
         const sellerAccountInfo2 = await getAccount(connection, sellerTokenAccount.address);
         console.log('Seller token account balance:', Number(sellerAccountInfo2.amount));
+
+        // TEST : create_loan
+        const borrowerKeypair = Keypair.generate();
+        console.log('Borrower address:', borrowerKeypair.publicKey.toBase58());
+
+        // Airdrops
+        let txBorrowerAirdrop = await connection.requestAirdrop(
+            borrowerKeypair.publicKey,
+            20 * LAMPORTS_PER_SOL
+        );
+        await connection.confirmTransaction(txBorrowerAirdrop);
+
+        let txCreateLoan = await program.methods
+            .createLoan(new BN(10), new BN(5), new BN(2), new BN(10))
+            .accounts({
+                seller: sellerKeypair.publicKey,
+                borrower: borrowerKeypair.publicKey,
+                tokenAccount: vaultAccount.tokenAccount,
+                vaultAccount: vaultAccountAddr,
+                mint: mint,
+            })
+            .signers([borrowerKeypair, sellerKeypair])
+            .rpc();
+        await connection.confirmTransaction(txCreateLoan);
+
+        const vaults3 = await program.account.vaultAccount.all();
+        console.log(`Proposal result: `, vaults3);
+        console.log(`Available tokens: `, vaults3[0].account.availableTokens.toString());
+        const sellerAccountInfo3 = await getAccount(connection, sellerTokenAccount.address);
+        console.log('Seller token account balance:', Number(sellerAccountInfo3.amount));
+        const vaultAccoutInfo = await getAccount(connection, vaultAccount.tokenAccount);
+        console.log('Vault token account balance:', Number(vaultAccoutInfo.amount));
+        let [borrowerTokenAccount] = PublicKey.findProgramAddressSync(
+            [Buffer.from("nemeos_borrower_token_account"), mint.toBuffer(), borrowerKeypair.publicKey.toBuffer()],
+            program.programId
+        );
+        const borrowerAccountInfo3 = await getAccount(connection, borrowerTokenAccount);
+        console.log('Borrower token account balance:', Number(borrowerAccountInfo3.amount));
+        const loans = await program.account.loanAccount.all();
+        console.log(`Loans: `, loans);
+
     });
 });

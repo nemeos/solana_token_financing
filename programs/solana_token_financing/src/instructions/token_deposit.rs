@@ -28,14 +28,13 @@ pub fn token_deposit(ctx: Context<TokenDeposit>, amount: u64) -> Result<()> {
 #[derive(Accounts)]
 pub struct TokenDeposit<'info> {
     #[account(mut)]
-    token_account: Account<'info, TokenAccount>,
-
-    #[account(mut)]
     seller_token_account: Account<'info, TokenAccount>,
 
     #[account(mut)]
     seller: Signer<'info>,
 
+    #[account(mut)]
+    token_account: Account<'info, TokenAccount>,
     #[account(mut, has_one = token_account)]
     vault_account: Account<'info, VaultAccount>,
 
