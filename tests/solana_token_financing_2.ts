@@ -101,7 +101,7 @@ describe("test 2", () => {
         await connection.confirmTransaction(txTokenDeposit);
 
         const vaults2 = await program.account.vaultAccount.all();
-        console.log(`Proposal result: `, vaults2);
+        console.log(`Vaults `, vaults2);
         console.log(`Available tokens: `, vaults2[0].account.availableTokens.toString());
         const sellerAccountInfo2 = await getAccount(connection, sellerTokenAccount.address);
         console.log('Seller token account balance:', Number(sellerAccountInfo2.amount));
@@ -131,7 +131,7 @@ describe("test 2", () => {
         await connection.confirmTransaction(txCreateLoan);
 
         const vaults3 = await program.account.vaultAccount.all();
-        console.log(`Proposal result: `, vaults3);
+        console.log(`Vaults: `, vaults3);
         console.log(`Available tokens: `, vaults3[0].account.availableTokens.toString());
         const sellerAccountInfo3 = await getAccount(connection, sellerTokenAccount.address);
         console.log('Seller token account balance:', Number(sellerAccountInfo3.amount));
@@ -172,7 +172,7 @@ describe("test 2", () => {
         const loans4 = await program.account.loanAccount.all();
         console.log(`Loans: `, loans4);
 
-        // // A second payment fails because the loan is already paid
+        // // SHOULD FAIL: A second payment fails because the loan is already paid
         // let txPayment2 = await program.methods
         //     .payment()
         //     .accounts({

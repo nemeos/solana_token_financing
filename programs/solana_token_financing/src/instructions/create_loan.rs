@@ -71,7 +71,7 @@ pub struct CreateLoan<'info> {
     #[account(
             init,
             payer = borrower,
-            seeds=[b"nemeos_loan_account", mint.key().as_ref(),borrower.key().as_ref()],
+            seeds=[b"nemeos_loan_account", mint.key().as_ref(),borrower.key().as_ref(), seller.key().as_ref()],
             space= 8 + LoanAccount::INIT_SPACE,
             bump
     )]

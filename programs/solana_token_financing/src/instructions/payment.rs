@@ -63,7 +63,7 @@ pub fn payment(ctx: Context<Payment>) -> Result<()> {
 pub struct Payment<'info> {
     #[account(
             mut,
-            seeds=[b"nemeos_loan_account", mint.key().as_ref(), borrower.key().as_ref()],
+            seeds=[b"nemeos_loan_account", mint.key().as_ref(), borrower.key().as_ref(), seller.key().as_ref()],
             bump
     )]
     loan_account: Account<'info, LoanAccount>,
