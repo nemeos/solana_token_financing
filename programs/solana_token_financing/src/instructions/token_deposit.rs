@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use anchor_spl::token::{self, Token, TokenAccount, Transfer};
+use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
 use crate::errors::ErrorCode;
 use crate::states::vault_account::VaultAccount;
@@ -33,10 +33,21 @@ pub struct TokenDeposit<'info> {
     #[account(mut)]
     seller: Signer<'info>,
 
-    #[account(mut)]
+    #[account(
+            mut,
+            seeds=[b"nemeos_vault_token_account", mint.key().as_ref()],
+            bump
+    )]
     vault_token_account: Account<'info, TokenAccount>,
-    #[account(mut, has_one = vault_token_account)]
+    #[account(
+            mut,
+            seeds=[b"nemeos_vault_account", mint.key().as_ref()],
+            bump,
+            has_one = seller,
+    )]
     vault_account: Account<'info, VaultAccount>,
+
+    mint: Account<'info, Mint>,
 
     token_program: Program<'info, Token>,
 }

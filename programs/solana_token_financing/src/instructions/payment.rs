@@ -85,17 +85,26 @@ pub struct Payment<'info> {
     borrower_token_account: Account<'info, TokenAccount>,
 
     #[account(mut)]
-    pub seller: SystemAccount<'info>,
+    seller: SystemAccount<'info>,
     #[account(mut)]
-    pub borrower: Signer<'info>,
+    borrower: Signer<'info>,
 
-    #[account(mut)]
-    pub vault_token_account: Account<'info, TokenAccount>,
-    #[account(mut, has_one = vault_token_account)]
-    pub vault_account: Account<'info, VaultAccount>,
+    #[account(
+            mut,
+            seeds=[b"nemeos_vault_token_account", mint.key().as_ref()],
+            bump
+    )]
+    vault_token_account: Account<'info, TokenAccount>,
+    #[account(
+            mut,
+            seeds=[b"nemeos_vault_account", mint.key().as_ref()],
+            bump,
+            has_one = seller,
+    )]
+    vault_account: Account<'info, VaultAccount>,
 
-    pub mint: Account<'info, Mint>,
+    mint: Account<'info, Mint>,
 
-    pub system_program: Program<'info, System>,
-    pub token_program: Program<'info, Token>,
+    system_program: Program<'info, System>,
+    token_program: Program<'info, Token>,
 }

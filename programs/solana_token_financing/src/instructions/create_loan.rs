@@ -66,17 +66,23 @@ pub struct CreateLoan<'info> {
     loan_account: Account<'info, LoanAccount>,
 
     #[account(mut)]
-    pub seller: Signer<'info>,
+    seller: Signer<'info>,
     #[account(mut)]
-    pub borrower: Signer<'info>,
+    borrower: Signer<'info>,
     #[account(mut)]
-    pub nemeos: SystemAccount<'info>,
+    nemeos: SystemAccount<'info>,
 
-    #[account(mut)]
-    pub vault_account: Account<'info, VaultAccount>,
+    #[account(
+            mut,
+            seeds=[b"nemeos_vault_account", mint.key().as_ref()],
+            bump,
+            has_one = seller,
+            has_one = nemeos,
+    )]
+    vault_account: Account<'info, VaultAccount>,
 
-    pub mint: Account<'info, Mint>,
+    mint: Account<'info, Mint>,
 
-    pub system_program: Program<'info, System>,
-    pub token_program: Program<'info, Token>,
+    system_program: Program<'info, System>,
+    token_program: Program<'info, Token>,
 }

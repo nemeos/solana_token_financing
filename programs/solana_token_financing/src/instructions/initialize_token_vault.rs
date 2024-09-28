@@ -9,8 +9,8 @@ pub fn initialize_token_vault(
     interest_rate: u8,
 ) -> Result<()> {
     let vault_account = &mut ctx.accounts.vault_account;
-    vault_account.vault_token_account = ctx.accounts.vault_token_account.key();
     vault_account.nemeos = ctx.accounts.nemeos.key();
+    vault_account.seller = ctx.accounts.seller.key();
     vault_account.available_tokens = 0;
     vault_account.interest_rate = interest_rate;
     Ok(())
@@ -30,7 +30,7 @@ pub struct InitializeTokenAccount<'info> {
     #[account(
             init,
             payer = seller,
-            seeds=[b"nemeos_token_vault", mint.key().as_ref()],
+            seeds=[b"nemeos_vault_token_account", mint.key().as_ref()],
             token::mint=mint,
             token::authority=token_account_owner_pda,
             bump
@@ -40,7 +40,7 @@ pub struct InitializeTokenAccount<'info> {
     #[account(
             init,
             payer = seller,
-            seeds=[b"nemeos_vault", mint.key().as_ref()],
+            seeds=[b"nemeos_vault_account", mint.key().as_ref()],
             space= 8 + VaultAccount::INIT_SPACE,
             bump
     )]
@@ -51,6 +51,7 @@ pub struct InitializeTokenAccount<'info> {
     #[account(mut)]
     seller: Signer<'info>,
     nemeos: Signer<'info>,
+
     system_program: Program<'info, System>,
     token_program: Program<'info, Token>,
 }
