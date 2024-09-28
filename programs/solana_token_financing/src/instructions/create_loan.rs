@@ -20,6 +20,7 @@ pub fn create_loan(
         .ok_or(ErrorCode::Overflow)?;
 
     // Transfer fees (SOL) from borrower to Nemeos
+    // TODO: fix fees calculation
     let mut fees_amount =
         ((nb_payments * vault_account.interest_rate) as u64) * payment_amount / 100;
     // TODO maybe could be removed
@@ -49,8 +50,9 @@ pub fn create_loan(
     loan_account.nb_remaining_payments = nb_payments;
     loan_account.period_duration = period_duration;
     let now = Clock::get()?.unix_timestamp as u64;
+    loan_account.start_period = now;
     // TODO the first deadline could be shorter
-    loan_account.next_payment_deadline = now + period_duration;
+    loan_account.end_period = now + period_duration;
 
     Ok(())
 }

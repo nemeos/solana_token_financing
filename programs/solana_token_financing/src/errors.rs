@@ -11,6 +11,9 @@ pub enum ErrorCode {
     #[msg("The payment is too late.")]
     TooLate,
 
+    #[msg("The payment is too early.")]
+    TooEarly,
+
     #[msg("The loan is already fully paid.")]
     NoRemainingPayments,
 }

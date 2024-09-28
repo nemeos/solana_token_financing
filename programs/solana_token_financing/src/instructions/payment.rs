@@ -13,9 +13,12 @@ pub fn payment(ctx: Context<Payment>) -> Result<()> {
 
     // Checks
     let now = Clock::get()?.unix_timestamp as u64;
-    if loan_account.next_payment_deadline < now {
+    if loan_account.end_period < now {
         // TODO close the loan
         return Err(ErrorCode::TooLate.into());
+    }
+    if loan_account.start_period > now {
+        return Err(ErrorCode::TooEarly.into());
     }
     if loan_account.nb_remaining_payments == 0 {
         return Err(ErrorCode::NoRemainingPayments.into());
@@ -51,7 +54,8 @@ pub fn payment(ctx: Context<Payment>) -> Result<()> {
     );
     token::transfer(cpi_ctx, loan_account.nb_of_tokens_per_payment)?;
 
-    loan_account.next_payment_deadline += loan_account.period_duration;
+    loan_account.start_period = loan_account.end_period;
+    loan_account.end_period += loan_account.period_duration;
     loan_account.nb_remaining_payments -= 1;
 
     // TODO: close loan if nb_remaining_payments == 0

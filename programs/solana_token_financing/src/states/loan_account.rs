@@ -9,5 +9,6 @@ pub struct LoanAccount {
     pub nb_of_tokens_per_payment: u64,
     pub nb_remaining_payments: u8,
     pub period_duration: u64,
-    pub next_payment_deadline: u64,
+    pub start_period: u64,
+    pub end_period: u64,
 }
