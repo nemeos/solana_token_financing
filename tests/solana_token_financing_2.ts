@@ -19,6 +19,48 @@ function wait(seconds: number): Promise<void> {
     });
 }
 
+async function print_users_accounts(
+    connection: anchor.web3.Connection,
+    nemeosAccount: anchor.web3.PublicKey,
+    sellerAccount: anchor.web3.PublicKey,
+    sellerTokenAccount: anchor.web3.PublicKey,
+    borrowerAccount: anchor.web3.PublicKey,
+    borrowerTokenAccount?: anchor.web3.PublicKey,
+): Promise<void> {
+    const nemeosSol = await connection.getBalance(nemeosAccount);
+    console.log(`Nemeos: ${nemeosSol / anchor.web3.LAMPORTS_PER_SOL} SOL`);
+
+    const sellerSol = await connection.getBalance(sellerAccount);
+    const sellerTokenInfo = await connection.getTokenAccountBalance(sellerTokenAccount);
+    const sellerTokens = sellerTokenInfo.value.uiAmount;
+    console.log(`Seller: ${sellerSol / anchor.web3.LAMPORTS_PER_SOL} SOL, ${sellerTokens} tokens`);
+
+    const borrowerSol = await connection.getBalance(borrowerAccount);
+    if (borrowerTokenAccount) {
+        const borrowerTokenInfo = await connection.getTokenAccountBalance(borrowerTokenAccount);
+        const borrowerTokens = borrowerTokenInfo.value.uiAmount;
+        console.log(`Borrower: ${borrowerSol / anchor.web3.LAMPORTS_PER_SOL} SOL, ${borrowerTokens} tokens`);
+    } else {
+        console.log(`Borrower: ${borrowerSol / anchor.web3.LAMPORTS_PER_SOL} SOL`);
+    }
+}
+
+async function print_vault(connection: anchor.web3.Connection, program: Program<SolanaTokenFinancing>, mint: anchor.web3.PublicKey): Promise<void> {
+    const [vaultTokenAccount, _bumpVaultTokenAccountAddr] = await PublicKey.findProgramAddress(
+        [Buffer.from("nemeos_vault_token_account"), mint.toBuffer()],
+        program.programId
+    );
+    const vaultTokenInfo = await connection.getTokenAccountBalance(vaultTokenAccount);
+    const vaultTokens = vaultTokenInfo.value.uiAmount;
+
+    const [vaultAccountAddr, _bumpVaultAccountAddr] = await PublicKey.findProgramAddress(
+        [Buffer.from("nemeos_vault_account"), mint.toBuffer()],
+        program.programId
+    );
+    const vaultAccount = await program.account.vaultAccount.fetch(vaultAccountAddr);
+    console.log(`Vault: ${vaultTokens} tokens including ${vaultAccount.availableTokens} available`);
+}
+
 describe("test 2", () => {
     // Configure the client to use the local cluster.
     anchor.setProvider(anchor.AnchorProvider.env());
@@ -27,12 +69,15 @@ describe("test 2", () => {
     const connection = new Connection('http://127.0.0.1:8899', 'confirmed');
 
     it("Full workflow", async () => {
+        // Create keypairs
         const sellerKeypair = Keypair.generate();
-        console.log('Seller address:', sellerKeypair.publicKey.toBase58());
+        // console.log('Seller address:', sellerKeypair.publicKey.toBase58());
         const nemeosKeypair = Keypair.generate();
-        console.log('Nemeos address:', nemeosKeypair.publicKey.toBase58());
+        // console.log('Nemeos address:', nemeosKeypair.publicKey.toBase58());
+        const borrowerKeypair = Keypair.generate();
+        // console.log('Borrower address:', borrowerKeypair.publicKey.toBase58());
 
-        // Airdrops
+        // Create accounts with airdrops
         let txSellerAirdrop = await connection.requestAirdrop(
             sellerKeypair.publicKey,
             5 * LAMPORTS_PER_SOL
@@ -43,36 +88,22 @@ describe("test 2", () => {
             5 * LAMPORTS_PER_SOL
         );
         await connection.confirmTransaction(txNemeosAirdrop);
+        let txBorrowerAirdrop = await connection.requestAirdrop(
+            borrowerKeypair.publicKey,
+            50 * LAMPORTS_PER_SOL
+        );
+        await connection.confirmTransaction(txBorrowerAirdrop);
 
-        // TEST : initialize_token_vault
         // Create a SPL token
         const mint = await createMint(
             connection,
             sellerKeypair, // Payer
             sellerKeypair.publicKey, // Mint authority
             null, // Freeze authority
-            1, // Decimals
+            9, // Decimals
         );
-        console.log('Mint address:', mint.toBase58());
+        // console.log('Mint address:', mint.toBase58());
 
-        let txInitVault = await program.methods
-            .initializeTokenVault(new BN(3))
-            .accounts({
-                mint: mint,
-                seller: sellerKeypair.publicKey,
-                nemeos: nemeosKeypair.publicKey,
-            })
-            .signers([sellerKeypair, nemeosKeypair])
-            .rpc();
-        await connection.confirmTransaction(txInitVault);
-
-        const balanceSeller = await connection.getBalance(sellerKeypair.publicKey);
-        console.log(`Seller balance (SOL): ${balanceSeller / anchor.web3.LAMPORTS_PER_SOL} SOL`);
-
-        const vaults = await program.account.vaultAccount.all();
-        console.log(`Vaults: `, vaults);
-
-        // TEST : deposit_tokens
         // Create an associated token account for the seller
         const sellerTokenAccount = await getOrCreateAssociatedTokenAccount(
             connection,
@@ -80,7 +111,7 @@ describe("test 2", () => {
             mint, // SPL token address
             sellerKeypair.publicKey // Owner of the token account
         );
-        console.log('Seller token account:', sellerTokenAccount.address.toBase58());
+        // console.log('Seller token account:', sellerTokenAccount.address.toBase58());
 
         // Mint tokens to the seller's token account
         await mintTo(
@@ -92,20 +123,25 @@ describe("test 2", () => {
             1_000_000_000 // Amount of tokens to mint (1 token with 9 decimals)
         );
 
-        // Check the balance of the user's token account
-        const sellerAccountInfo = await getAccount(connection, sellerTokenAccount.address);
-        console.log('Seller token account balance:', Number(sellerAccountInfo.amount));
+        await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);
 
-        const [vaultAccountAddr, _bumpVaultAccountAddr] = await PublicKey.findProgramAddress(
-            [Buffer.from("nemeos_vault_account"), mint.toBuffer()],
-            program.programId
-        );
-        const vaultAccount = await program.account.vaultAccount.fetch(vaultAccountAddr);
-        const [vaultTokenAccount, _bumpVaultTokenAccountAddr] = await PublicKey.findProgramAddress(
-            [Buffer.from("nemeos_vault_token_account"), mint.toBuffer()],
-            program.programId
-        );
+        // TEST : initialize_token_vault
+        console.log(`*** Initialize token vault ****`);
+        let txInitVault = await program.methods
+            .initializeTokenVault(new BN(3))
+            .accounts({
+                mint: mint,
+                seller: sellerKeypair.publicKey,
+                nemeos: nemeosKeypair.publicKey,
+            })
+            .signers([sellerKeypair, nemeosKeypair])
+            .rpc();
+        await connection.confirmTransaction(txInitVault);
 
+        await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);
+
+        // TEST : deposit_tokens
+        console.log(`*** Deposit tokens ****`);
         let txTokenDeposit = await program.methods
             .tokenDeposit(new BN(100))
             .accounts({
@@ -117,25 +153,13 @@ describe("test 2", () => {
             .rpc();
         await connection.confirmTransaction(txTokenDeposit);
 
-        const vaults2 = await program.account.vaultAccount.all();
-        console.log(`Vaults `, vaults2);
-        console.log(`Available tokens: `, vaults2[0].account.availableTokens.toString());
-        const sellerAccountInfo2 = await getAccount(connection, sellerTokenAccount.address);
-        console.log('Seller token account balance:', Number(sellerAccountInfo2.amount));
+        await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);
+        await print_vault(connection, program, mint);
 
         // TEST : create_loan
-        const borrowerKeypair = Keypair.generate();
-        console.log('Borrower address:', borrowerKeypair.publicKey.toBase58());
-
-        // Airdrops
-        let txBorrowerAirdrop = await connection.requestAirdrop(
-            borrowerKeypair.publicKey,
-            50 * LAMPORTS_PER_SOL
-        );
-        await connection.confirmTransaction(txBorrowerAirdrop);
-
+        console.log(`*** Create loan ****`);
         let txCreateLoan = await program.methods
-            .createLoan(new BN(10), new BN(5), new BN(2), new BN(10))
+            .createLoan(new BN(10), new BN(5), new BN(2), new BN(3))
             .accounts({
                 seller: sellerKeypair.publicKey,
                 borrower: borrowerKeypair.publicKey,
@@ -146,18 +170,12 @@ describe("test 2", () => {
             .rpc();
         await connection.confirmTransaction(txCreateLoan);
 
-        const vaults3 = await program.account.vaultAccount.all();
-        console.log(`Vaults: `, vaults3);
-        console.log(`Available tokens: `, vaults3[0].account.availableTokens.toString());
-        const sellerAccountInfo3 = await getAccount(connection, sellerTokenAccount.address);
-        console.log('Seller token account balance:', Number(sellerAccountInfo3.amount));
-        const vaultAccountInfo = await getAccount(connection, vaultTokenAccount);
-        console.log('Vault token account balance:', Number(vaultAccountInfo.amount));
-        const loans = await program.account.loanAccount.all();
-        console.log(`Loans: `, loans);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);
+        await print_vault(connection, program, mint);
 
-        // TEST : payment
-        await wait(5); // wait 5s
+        // TEST : payment 1
+        console.log(`*** Payment 1 ****`);
+        await wait(1); // wait 1s
         let txPayment = await program.methods
             .payment()
             .accounts({
@@ -173,20 +191,31 @@ describe("test 2", () => {
             [Buffer.from("nemeos_borrower_token_account"), mint.toBuffer(), borrowerKeypair.publicKey.toBuffer()],
             program.programId
         );
-        const vaults4 = await program.account.vaultAccount.all();
-        console.log(`Vaults result: `, vaults4);
-        console.log(`Available tokens: `, vaults4[0].account.availableTokens.toString());
-        const sellerAccountInfo4 = await getAccount(connection, sellerTokenAccount.address);
-        console.log('Seller token account balance:', Number(sellerAccountInfo4.amount));
-        const vaultAccountInfo4 = await getAccount(connection, vaultTokenAccount);
-        console.log('Vault token account balance:', Number(vaultAccountInfo4.amount));
-        const borrowerAccountInfo4 = await getAccount(connection, borrowerTokenAccount);
-        console.log('Borrower token account balance:', Number(borrowerAccountInfo4.amount));
-        const loans4 = await program.account.loanAccount.all();
-        console.log(`Loans: `, loans4);
 
-        // // SHOULD FAIL: A second payment fails because the loan is already paid
-        // let txPayment2 = await program.methods
+        await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerTokenAccount);
+        await print_vault(connection, program, mint);
+
+        // TEST : payment 2
+        console.log(`*** Payment 2 ****`);
+        await wait(3); // wait 3s
+        let txPayment2 = await program.methods
+            .payment()
+            .accounts({
+                seller: sellerKeypair.publicKey,
+                borrower: borrowerKeypair.publicKey,
+                mint: mint,
+            })
+            .signers([borrowerKeypair])
+            .rpc();
+        await connection.confirmTransaction(txPayment2);
+
+        await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerTokenAccount);
+        await print_vault(connection, program, mint);
+
+        // // TEST : payment 3 (SHOULD FAIL)
+        // console.log(`*** Payment 3 ****`);
+        // await wait(3); // wait 3s
+        // let txPayment3 = await program.methods
         //     .payment()
         //     .accounts({
         //         seller: sellerKeypair.publicKey,
@@ -195,8 +224,7 @@ describe("test 2", () => {
         //     })
         //     .signers([borrowerKeypair])
         //     .rpc();
-        // await connection.confirmTransaction(txPayment);
-
+        // await connection.confirmTransaction(txPayment3);
 
     });
 });
