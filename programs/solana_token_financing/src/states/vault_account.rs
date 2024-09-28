@@ -9,5 +9,5 @@ pub struct VaultAccount {
     pub nemeos: Pubkey,
     pub seller: Pubkey,
     pub available_tokens: u64,
-    pub interest_rate: u8,
+    pub annual_interest_rate: u8,
 }

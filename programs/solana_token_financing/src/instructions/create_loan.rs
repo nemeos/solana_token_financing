@@ -5,6 +5,8 @@ use anchor_spl::token::{Mint, Token};
 use crate::errors::ErrorCode;
 use crate::states::{loan_account::LoanAccount, vault_account::VaultAccount};
 
+const SECONDS_PER_YEAR: u64 = 60 * 60 * 24 * 365;
+
 pub fn create_loan(
     ctx: Context<CreateLoan>,
     payment_amount: u64,
@@ -20,9 +22,13 @@ pub fn create_loan(
         .ok_or(ErrorCode::Overflow)?;
 
     // Transfer fees (SOL) from borrower to Nemeos
-    // TODO: fix fees calculation
+    // fees_amount = (annual_interest_rate * loan_duration_in_seconds / seconds_per_year)
+    //               * loan_amount / 2
+    let loan_amount = (nb_payments as u64) * payment_amount;
+    let loan_duration_in_seconds = (nb_payments as u64) * period_duration_in_seconds;
     let mut fees_amount =
-        ((nb_payments * vault_account.interest_rate) as u64) * payment_amount / 100;
+        (vault_account.annual_interest_rate as u64) * loan_duration_in_seconds * loan_amount
+            / (100 * SECONDS_PER_YEAR * 2);
     // TODO maybe could be removed
     if fees_amount == 0 {
         fees_amount = 1;

@@ -6,13 +6,13 @@ use crate::states::vault_account::{TokenAccountOwnerPda, VaultAccount};
 
 pub fn initialize_token_vault(
     ctx: Context<InitializeTokenAccount>,
-    interest_rate: u8,
+    annual_interest_rate: u8,
 ) -> Result<()> {
     let vault_account = &mut ctx.accounts.vault_account;
     vault_account.nemeos = ctx.accounts.nemeos.key();
     vault_account.seller = ctx.accounts.seller.key();
     vault_account.available_tokens = 0;
-    vault_account.interest_rate = interest_rate;
+    vault_account.annual_interest_rate = annual_interest_rate;
     Ok(())
 }
 
