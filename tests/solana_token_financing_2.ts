@@ -100,7 +100,7 @@ describe("test 2", () => {
             sellerKeypair, // Payer
             sellerKeypair.publicKey, // Mint authority
             null, // Freeze authority
-            9, // Decimals
+            2, // Decimals
         );
         // console.log('Mint address:', mint.toBase58());
 
@@ -120,7 +120,7 @@ describe("test 2", () => {
             mint, // SPL token address
             sellerTokenAccount.address, // Destination account
             sellerKeypair.publicKey, // Mint authority
-            1_000_000_000 // Amount of tokens to mint (1 token with 9 decimals)
+            1_000 * 100 // Amount of tokens to mint (1_000 token with 2 decimals)
         );
 
         await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);

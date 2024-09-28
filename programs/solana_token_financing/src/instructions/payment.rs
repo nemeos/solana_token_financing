@@ -39,6 +39,9 @@ pub fn payment(ctx: Context<Payment>) -> Result<()> {
     )?;
 
     // Transfer tokens from token vault to borrower
+
+    let token_amount =
+        loan_account.nb_of_tokens_per_payment * 10u64.pow(ctx.accounts.mint.decimals as u32);
     let transfer_instruction = Transfer {
         from: ctx.accounts.vault_token_account.to_account_info(),
         to: ctx.accounts.borrower_token_account.to_account_info(),
@@ -52,7 +55,7 @@ pub fn payment(ctx: Context<Payment>) -> Result<()> {
         transfer_instruction,
         signer,
     );
-    token::transfer(cpi_ctx, loan_account.nb_of_tokens_per_payment)?;
+    token::transfer(cpi_ctx, token_amount)?;
 
     loan_account.start_period = loan_account.end_period;
     loan_account.end_period += loan_account.period_duration_in_seconds;

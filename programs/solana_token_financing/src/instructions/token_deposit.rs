@@ -6,6 +6,7 @@ use crate::errors::ErrorCode;
 use crate::states::vault_account::VaultAccount;
 
 pub fn token_deposit(ctx: Context<TokenDeposit>, amount: u64) -> Result<()> {
+    let token_amount = amount * 10u64.pow(ctx.accounts.mint.decimals as u32);
     let cpi_accounts = Transfer {
         from: ctx.accounts.seller_token_account.to_account_info(),
         to: ctx.accounts.vault_token_account.to_account_info(),
@@ -14,7 +15,7 @@ pub fn token_deposit(ctx: Context<TokenDeposit>, amount: u64) -> Result<()> {
 
     let cpi_program = ctx.accounts.token_program.to_account_info();
     let cpi_context = CpiContext::new(cpi_program, cpi_accounts);
-    token::transfer(cpi_context, amount)?;
+    token::transfer(cpi_context, token_amount)?;
 
     let vault_account = &mut ctx.accounts.vault_account;
     vault_account.available_tokens = vault_account
