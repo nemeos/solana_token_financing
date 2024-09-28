@@ -195,6 +195,22 @@ describe("test 2", () => {
         await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerTokenAccount);
         await print_vault(connection, program, mint);
 
+        // // TEST : close_loan after payment 1
+        // console.log(`*** Close loan ****`);
+        // await wait(5); // wait 5s
+        // let txCloseLoanEarlier = await program.methods
+        //     .closeLoan()
+        //     .accounts({
+        //         seller: sellerKeypair.publicKey,
+        //         borrower: borrowerKeypair.publicKey,
+        //         mint: mint,
+        //     })
+        //     .signers([])
+        //     .rpc();
+        // await connection.confirmTransaction(txCloseLoanEarlier);
+        // await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);
+        // await print_vault(connection, program, mint);
+
         // TEST : payment 2
         console.log(`*** Payment 2 ****`);
         await wait(3); // wait 3s
@@ -226,5 +242,20 @@ describe("test 2", () => {
         //     .rpc();
         // await connection.confirmTransaction(txPayment3);
 
+        // TEST : close_loan
+        console.log(`*** Close loan ****`);
+        let txCloseLoan = await program.methods
+            .closeLoan()
+            .accounts({
+                seller: sellerKeypair.publicKey,
+                borrower: borrowerKeypair.publicKey,
+                mint: mint,
+            })
+            .signers([])
+            .rpc();
+        await connection.confirmTransaction(txCloseLoan);
+
+        await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);
+        await print_vault(connection, program, mint);
     });
 });

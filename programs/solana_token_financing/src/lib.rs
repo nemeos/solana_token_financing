@@ -42,4 +42,8 @@ pub mod solana_token_financing {
     pub fn payment(ctx: Context<Payment>) -> Result<()> {
         instructions::payment(ctx)
     }
+
+    pub fn close_loan(ctx: Context<CloseLoan>) -> Result<()> {
+        instructions::close_loan(ctx)
+    }
 }

@@ -16,4 +16,7 @@ pub enum ErrorCode {
 
     #[msg("The loan is already fully paid.")]
     NoRemainingPayments,
+
+    #[msg("Impossible to close loan: the loan is still in progress.")]
+    ImpossibleToCloseLoan,
 }

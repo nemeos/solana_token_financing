@@ -61,7 +61,7 @@ pub fn payment(ctx: Context<Payment>) -> Result<()> {
     loan_account.end_period += loan_account.period_duration_in_seconds;
     loan_account.nb_remaining_payments -= 1;
 
-    // TODO: close loan if nb_remaining_payments == 0
+    // TODO close loan account when no remaining payments
 
     Ok(())
 }
