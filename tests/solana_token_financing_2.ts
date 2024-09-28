@@ -11,6 +11,14 @@ import {
 } from '@solana/spl-token';
 import {SolanaTokenFinancing} from "../target/types/solana_token_financing";
 
+function wait(seconds: number): Promise<void> {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            resolve();
+        }, seconds * 1000);
+    });
+}
+
 describe("test 2", () => {
     // Configure the client to use the local cluster.
     anchor.setProvider(anchor.AnchorProvider.env());
@@ -149,6 +157,7 @@ describe("test 2", () => {
         console.log(`Loans: `, loans);
 
         // TEST : payment
+        await wait(5); // wait 5s
         let txPayment = await program.methods
             .payment()
             .accounts({

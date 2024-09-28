@@ -10,7 +10,7 @@ pub fn create_loan(
     payment_amount: u64,
     nb_of_tokens_per_payment: u64,
     nb_payments: u8,
-    period_duration: u64,
+    period_duration_in_seconds: u64,
 ) -> Result<()> {
     // Check that there is enough tokens in the token vault for this loan
     let vault_account = &mut ctx.accounts.vault_account;
@@ -48,11 +48,11 @@ pub fn create_loan(
     loan_account.payment_amount = payment_amount;
     loan_account.nb_of_tokens_per_payment = nb_of_tokens_per_payment;
     loan_account.nb_remaining_payments = nb_payments;
-    loan_account.period_duration = period_duration;
+    loan_account.period_duration_in_seconds = period_duration_in_seconds;
     let now = Clock::get()?.unix_timestamp as u64;
     loan_account.start_period = now;
     // TODO the first deadline could be shorter
-    loan_account.end_period = now + period_duration;
+    loan_account.end_period = now + period_duration_in_seconds;
 
     Ok(())
 }
