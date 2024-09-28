@@ -43,6 +43,7 @@ pub fn create_loan(
     // Create loan account
     let loan_account = &mut ctx.accounts.loan_account;
     loan_account.borrower = ctx.accounts.borrower.key();
+    loan_account.seller = ctx.accounts.seller.key();
     loan_account.payment_amount = payment_amount;
     loan_account.nb_of_tokens_per_payment = nb_of_tokens_per_payment;
     loan_account.nb_remaining_payments = nb_payments;

@@ -29,7 +29,6 @@ pub fn token_deposit(ctx: Context<TokenDeposit>, amount: u64) -> Result<()> {
 pub struct TokenDeposit<'info> {
     #[account(mut)]
     seller_token_account: Account<'info, TokenAccount>,
-
     #[account(mut)]
     seller: Signer<'info>,
 
