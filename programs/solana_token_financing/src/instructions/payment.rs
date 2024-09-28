@@ -75,8 +75,11 @@ pub struct Payment<'info> {
     token_account_owner_pda: Account<'info, TokenAccountOwnerPda>,
 
     #[account(
-            mut,
+            init_if_needed,
+            payer = borrower,
             seeds=[b"nemeos_borrower_token_account", mint.key().as_ref(), borrower.key().as_ref()],
+            token::mint=mint,
+            token::authority=borrower,
             bump
     )]
     borrower_token_account: Account<'info, TokenAccount>,

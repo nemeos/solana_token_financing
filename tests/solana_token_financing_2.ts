@@ -30,6 +30,11 @@ describe("test 2", () => {
             5 * LAMPORTS_PER_SOL
         );
         await connection.confirmTransaction(txSellerAirdrop);
+        let txNemeosAirdrop = await connection.requestAirdrop(
+            nemeosKeypair.publicKey,
+            5 * LAMPORTS_PER_SOL
+        );
+        await connection.confirmTransaction(txNemeosAirdrop);
 
         // TEST : initialize_token_vault
         // Create a SPL token
@@ -123,7 +128,7 @@ describe("test 2", () => {
             .accounts({
                 seller: sellerKeypair.publicKey,
                 borrower: borrowerKeypair.publicKey,
-                vaultTokenAccount: vaultAccount.vaultTokenAccount,
+                nemeos: nemeosKeypair.publicKey,
                 vaultAccount: vaultAccountAddr,
                 mint: mint,
             })
@@ -138,12 +143,6 @@ describe("test 2", () => {
         console.log('Seller token account balance:', Number(sellerAccountInfo3.amount));
         const vaultAccountInfo = await getAccount(connection, vaultAccount.vaultTokenAccount);
         console.log('Vault token account balance:', Number(vaultAccountInfo.amount));
-        let [borrowerTokenAccount] = PublicKey.findProgramAddressSync(
-            [Buffer.from("nemeos_borrower_token_account"), mint.toBuffer(), borrowerKeypair.publicKey.toBuffer()],
-            program.programId
-        );
-        const borrowerAccountInfo3 = await getAccount(connection, borrowerTokenAccount);
-        console.log('Borrower token account balance:', Number(borrowerAccountInfo3.amount));
         const loans = await program.account.loanAccount.all();
         console.log(`Loans: `, loans);
 
@@ -161,6 +160,10 @@ describe("test 2", () => {
             .rpc();
         await connection.confirmTransaction(txPayment);
 
+        let [borrowerTokenAccount] = PublicKey.findProgramAddressSync(
+            [Buffer.from("nemeos_borrower_token_account"), mint.toBuffer(), borrowerKeypair.publicKey.toBuffer()],
+            program.programId
+        );
         const vaults4 = await program.account.vaultAccount.all();
         console.log(`Vaults result: `, vaults4);
         console.log(`Available tokens: `, vaults4[0].account.availableTokens.toString());
