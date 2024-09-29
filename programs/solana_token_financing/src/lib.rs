@@ -15,8 +15,9 @@ pub mod solana_token_financing {
     pub fn initialize_token_vault(
         ctx: Context<InitializeTokenAccount>,
         annual_interest_rate: u8,
+        payment_currency: Pubkey,
     ) -> Result<()> {
-        instructions::initialize_token_vault(ctx, annual_interest_rate)
+        instructions::initialize_token_vault(ctx, annual_interest_rate, payment_currency)
     }
 
     pub fn token_deposit(ctx: Context<TokenDeposit>, amount: u64) -> Result<()> {

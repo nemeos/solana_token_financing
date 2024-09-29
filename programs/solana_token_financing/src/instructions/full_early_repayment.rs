@@ -3,10 +3,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
 use crate::errors::ErrorCode;
-use crate::states::{
-    loan_account::LoanAccount,
-    vault_account::{TokenAccountOwnerPda, VaultAccount},
-};
+use crate::states::{loan_account::LoanAccount, vault_account::TokenAccountOwnerPda};
 
 pub fn full_early_repayment(ctx: Context<FullEarlyRepayment>) -> Result<()> {
     let loan_account = &mut ctx.accounts.loan_account;
@@ -20,35 +17,42 @@ pub fn full_early_repayment(ctx: Context<FullEarlyRepayment>) -> Result<()> {
         return Err(ErrorCode::NoRemainingPayments.into());
     }
 
-    // Transfer SOL fees from borrower to Nemeos
+    // Transfer fees from borrower to Nemeos
     // Fees are set at 3% of the remaining principal
     let fees_amount =
         (loan_account.nb_remaining_payments as u64) * loan_account.payment_amount * 3 / 100;
-    let ix = anchor_lang::solana_program::system_instruction::transfer(
-        &ctx.accounts.borrower.key(),
-        &ctx.accounts.nemeos.key(),
-        fees_amount,
-    );
-    anchor_lang::solana_program::program::invoke(
-        &ix,
-        &[
-            ctx.accounts.borrower.to_account_info(),
-            ctx.accounts.nemeos.to_account_info(),
-        ],
-    )?;
+    if ctx.accounts.nemeos_payment_account.mint != loan_account.payment_currency {
+        return Err(ErrorCode::WrongCurrency.into());
+    }
+    if ctx.accounts.nemeos_payment_account.owner != loan_account.nemeos {
+        return Err(ErrorCode::WrongReceiver.into());
+    }
+    let cpi_accounts = Transfer {
+        from: ctx.accounts.borrower_payment_account.to_account_info(),
+        to: ctx.accounts.nemeos_payment_account.to_account_info(),
+        authority: ctx.accounts.borrower.to_account_info(),
+    };
+    let cpi_program = ctx.accounts.token_program.to_account_info();
+    let cpi_context = CpiContext::new(cpi_program, cpi_accounts);
+    token::transfer(cpi_context, fees_amount)?;
 
-    // Transfer SOL from borrower to seller
-    let ix = anchor_lang::solana_program::system_instruction::transfer(
-        &ctx.accounts.borrower.key(),
-        &ctx.accounts.seller.key(),
-        loan_account.payment_amount * loan_account.nb_remaining_payments as u64,
-    );
-    anchor_lang::solana_program::program::invoke(
-        &ix,
-        &[
-            ctx.accounts.borrower.to_account_info(),
-            ctx.accounts.seller.to_account_info(),
-        ],
+    // Transfer from borrower to seller
+    if ctx.accounts.seller_payment_account.mint != loan_account.payment_currency {
+        return Err(ErrorCode::WrongCurrency.into());
+    }
+    if ctx.accounts.seller_payment_account.owner != loan_account.seller {
+        return Err(ErrorCode::WrongReceiver.into());
+    }
+    let cpi_payment_accounts = Transfer {
+        from: ctx.accounts.borrower_payment_account.to_account_info(),
+        to: ctx.accounts.seller_payment_account.to_account_info(),
+        authority: ctx.accounts.borrower.to_account_info(),
+    };
+    let cpi_payment_program = ctx.accounts.token_program.to_account_info();
+    let cpi_payment_context = CpiContext::new(cpi_payment_program, cpi_payment_accounts);
+    token::transfer(
+        cpi_payment_context,
+        loan_account.payment_amount * (loan_account.nb_remaining_payments as u64),
     )?;
 
     // Transfer tokens from token vault to borrower
@@ -84,7 +88,7 @@ pub fn full_early_repayment(ctx: Context<FullEarlyRepayment>) -> Result<()> {
 pub struct FullEarlyRepayment<'info> {
     #[account(
             mut,
-            seeds=[b"nemeos_loan_account", mint.key().as_ref(), borrower.key().as_ref(), seller.key().as_ref()],
+            seeds=[b"nemeos_loan_account", mint.key().as_ref(), borrower.key().as_ref()],
             bump
     )]
     loan_account: Account<'info, LoanAccount>,
@@ -106,11 +110,14 @@ pub struct FullEarlyRepayment<'info> {
     borrower_token_account: Account<'info, TokenAccount>,
 
     #[account(mut)]
-    seller: SystemAccount<'info>,
-    #[account(mut)]
     borrower: Signer<'info>,
+
     #[account(mut)]
-    nemeos: SystemAccount<'info>,
+    seller_payment_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    borrower_payment_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    nemeos_payment_account: Account<'info, TokenAccount>,
 
     #[account(
             mut,
@@ -118,14 +125,6 @@ pub struct FullEarlyRepayment<'info> {
             bump
     )]
     vault_token_account: Account<'info, TokenAccount>,
-    #[account(
-            mut,
-            seeds=[b"nemeos_vault_account", mint.key().as_ref()],
-            bump,
-            has_one = seller,
-            has_one = nemeos,
-    )]
-    vault_account: Account<'info, VaultAccount>,
 
     mint: Account<'info, Mint>,
 

@@ -3,10 +3,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
 use crate::errors::ErrorCode;
-use crate::states::{
-    loan_account::LoanAccount,
-    vault_account::{TokenAccountOwnerPda, VaultAccount},
-};
+use crate::states::{loan_account::LoanAccount, vault_account::TokenAccountOwnerPda};
 
 pub fn payment(ctx: Context<Payment>) -> Result<()> {
     // TODO all payments are identical (same amount of tokens and same amount of SOL)
@@ -25,19 +22,21 @@ pub fn payment(ctx: Context<Payment>) -> Result<()> {
         return Err(ErrorCode::NoRemainingPayments.into());
     }
 
-    // Transfer SOL from borrower to seller
-    let ix = anchor_lang::solana_program::system_instruction::transfer(
-        &ctx.accounts.borrower.key(),
-        &ctx.accounts.seller.key(),
-        loan_account.payment_amount,
-    );
-    anchor_lang::solana_program::program::invoke(
-        &ix,
-        &[
-            ctx.accounts.borrower.to_account_info(),
-            ctx.accounts.seller.to_account_info(),
-        ],
-    )?;
+    // Transfer from borrower to seller
+    if ctx.accounts.seller_payment_account.mint != loan_account.payment_currency {
+        return Err(ErrorCode::WrongCurrency.into());
+    }
+    if ctx.accounts.seller_payment_account.owner != loan_account.seller {
+        return Err(ErrorCode::WrongReceiver.into());
+    }
+    let cpi_payment_accounts = Transfer {
+        from: ctx.accounts.borrower_payment_account.to_account_info(),
+        to: ctx.accounts.seller_payment_account.to_account_info(),
+        authority: ctx.accounts.borrower.to_account_info(),
+    };
+    let cpi_payment_program = ctx.accounts.token_program.to_account_info();
+    let cpi_payment_context = CpiContext::new(cpi_payment_program, cpi_payment_accounts);
+    token::transfer(cpi_payment_context, loan_account.payment_amount)?;
 
     // Transfer tokens from token vault to borrower
     let transfer_instruction = Transfer {
@@ -69,7 +68,7 @@ pub fn payment(ctx: Context<Payment>) -> Result<()> {
 pub struct Payment<'info> {
     #[account(
             mut,
-            seeds=[b"nemeos_loan_account", mint.key().as_ref(), borrower.key().as_ref(), seller.key().as_ref()],
+            seeds=[b"nemeos_loan_account", mint.key().as_ref(), borrower.key().as_ref()],
             bump
     )]
     loan_account: Account<'info, LoanAccount>,
@@ -91,9 +90,11 @@ pub struct Payment<'info> {
     borrower_token_account: Account<'info, TokenAccount>,
 
     #[account(mut)]
-    seller: SystemAccount<'info>,
-    #[account(mut)]
     borrower: Signer<'info>,
+    #[account(mut)]
+    seller_payment_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    borrower_payment_account: Account<'info, TokenAccount>,
 
     #[account(
             mut,
@@ -101,13 +102,6 @@ pub struct Payment<'info> {
             bump
     )]
     vault_token_account: Account<'info, TokenAccount>,
-    #[account(
-            mut,
-            seeds=[b"nemeos_vault_account", mint.key().as_ref()],
-            bump,
-            has_one = seller,
-    )]
-    vault_account: Account<'info, VaultAccount>,
 
     mint: Account<'info, Mint>,
 

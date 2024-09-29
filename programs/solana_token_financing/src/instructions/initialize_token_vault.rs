@@ -7,6 +7,7 @@ use crate::states::vault_account::{TokenAccountOwnerPda, VaultAccount};
 pub fn initialize_token_vault(
     ctx: Context<InitializeTokenAccount>,
     annual_interest_rate: u8,
+    payment_currency: Pubkey,
 ) -> Result<()> {
     // TODO it is the same annual_interest_rate for all loans on this token
     let vault_account = &mut ctx.accounts.vault_account;
@@ -14,6 +15,9 @@ pub fn initialize_token_vault(
     vault_account.seller = ctx.accounts.seller.key();
     vault_account.available_tokens = 0;
     vault_account.annual_interest_rate = annual_interest_rate;
+    // TODO it is easier to fix the payment currency like this for the moment
+    // no access to USDC in my local testnet
+    vault_account.payment_currency = payment_currency;
     Ok(())
 }
 

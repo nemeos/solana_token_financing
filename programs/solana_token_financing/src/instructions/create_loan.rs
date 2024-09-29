@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use anchor_spl::token::{Mint, Token};
+use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
 use crate::errors::ErrorCode;
 use crate::states::{loan_account::LoanAccount, vault_account::VaultAccount};
@@ -21,7 +21,7 @@ pub fn create_loan(
         .checked_sub((nb_payments as u64) * nb_of_tokens_per_payment)
         .ok_or(ErrorCode::Overflow)?;
 
-    // Transfer fees (SOL) from borrower to Nemeos
+    // Transfer fees from borrower to Nemeos
     // fees_amount = (annual_interest_rate * loan_duration_in_seconds / seconds_per_year)
     //               * loan_amount / 2
     let loan_amount = (nb_payments as u64) * payment_amount;
@@ -30,23 +30,27 @@ pub fn create_loan(
         (vault_account.annual_interest_rate as u64) * loan_duration_in_seconds * loan_amount
             / (100 * SECONDS_PER_YEAR * 2);
 
-    let ix = anchor_lang::solana_program::system_instruction::transfer(
-        &ctx.accounts.borrower.key(),
-        &ctx.accounts.nemeos.key(),
-        fees_amount,
-    );
-    anchor_lang::solana_program::program::invoke(
-        &ix,
-        &[
-            ctx.accounts.borrower.to_account_info(),
-            ctx.accounts.nemeos.to_account_info(),
-        ],
-    )?;
+    if ctx.accounts.nemeos_payment_account.mint != vault_account.payment_currency {
+        return Err(ErrorCode::WrongCurrency.into());
+    }
+    if ctx.accounts.nemeos_payment_account.owner != vault_account.nemeos {
+        return Err(ErrorCode::WrongReceiver.into());
+    }
+    let cpi_accounts = Transfer {
+        from: ctx.accounts.borrower_payment_account.to_account_info(),
+        to: ctx.accounts.nemeos_payment_account.to_account_info(),
+        authority: ctx.accounts.borrower.to_account_info(),
+    };
+    let cpi_program = ctx.accounts.token_program.to_account_info();
+    let cpi_context = CpiContext::new(cpi_program, cpi_accounts);
+    token::transfer(cpi_context, fees_amount)?;
 
     // Create loan account
     let loan_account = &mut ctx.accounts.loan_account;
     loan_account.borrower = ctx.accounts.borrower.key();
     loan_account.seller = ctx.accounts.seller.key();
+    loan_account.nemeos = vault_account.nemeos;
+    loan_account.payment_currency = vault_account.payment_currency;
     loan_account.payment_amount = payment_amount;
     loan_account.nb_of_tokens_per_payment = nb_of_tokens_per_payment;
     loan_account.nb_remaining_payments = nb_payments;
@@ -65,7 +69,7 @@ pub struct CreateLoan<'info> {
     #[account(
             init,
             payer = borrower,
-            seeds=[b"nemeos_loan_account", mint.key().as_ref(),borrower.key().as_ref(), seller.key().as_ref()],
+            seeds=[b"nemeos_loan_account", mint.key().as_ref(),borrower.key().as_ref()],
             space= 8 + LoanAccount::INIT_SPACE,
             bump
     )]
@@ -76,14 +80,15 @@ pub struct CreateLoan<'info> {
     #[account(mut)]
     borrower: Signer<'info>,
     #[account(mut)]
-    nemeos: SystemAccount<'info>,
+    nemeos_payment_account: Account<'info, TokenAccount>,
+    #[account(mut)]
+    borrower_payment_account: Account<'info, TokenAccount>,
 
     #[account(
             mut,
             seeds=[b"nemeos_vault_account", mint.key().as_ref()],
             bump,
             has_one = seller,
-            has_one = nemeos,
     )]
     vault_account: Account<'info, VaultAccount>,
 

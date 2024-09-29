@@ -19,4 +19,10 @@ pub enum ErrorCode {
 
     #[msg("Impossible to close loan: the loan is still in progress.")]
     ImpossibleToCloseLoan,
+
+    #[msg("The payment currency is not the same as the one expected.")]
+    WrongCurrency,
+
+    #[msg("The payment receiver is not the same as the one expected.")]
+    WrongReceiver,
 }

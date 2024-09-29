@@ -5,6 +5,8 @@ use anchor_lang::prelude::*;
 pub struct LoanAccount {
     pub borrower: Pubkey, // TODO could be removed (already in the PDA)
     pub seller: Pubkey,   // TODO could be removed (already in the PDA)
+    pub nemeos: Pubkey,
+    pub payment_currency: Pubkey,
     pub payment_amount: u64,
     pub nb_of_tokens_per_payment: u64,
     pub nb_remaining_payments: u8,

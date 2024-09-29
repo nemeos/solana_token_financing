@@ -38,7 +38,7 @@ pub struct CloseLoan<'info> {
             mut,
             close = borrower,
             has_one = borrower,
-            seeds=[b"nemeos_loan_account", mint.key().as_ref(), borrower.key().as_ref(), seller.key().as_ref()],
+            seeds=[b"nemeos_loan_account", mint.key().as_ref(), borrower.key().as_ref()],
             bump
     )]
     loan_account: Account<'info, LoanAccount>,
@@ -47,14 +47,12 @@ pub struct CloseLoan<'info> {
             mut,
             seeds=[b"nemeos_vault_account", mint.key().as_ref()],
             bump,
-            has_one = seller,
     )]
     vault_account: Account<'info, VaultAccount>,
 
     #[account(mut)]
     // TODO no signer => everyone could close the loan
     borrower: SystemAccount<'info>,
-    seller: SystemAccount<'info>,
 
     mint: Account<'info, Mint>,
 
