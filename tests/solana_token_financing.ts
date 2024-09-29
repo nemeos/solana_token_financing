@@ -1,6 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
 import {Program} from "@coral-xyz/anchor";
 import {Connection, Keypair, PublicKey, LAMPORTS_PER_SOL} from '@solana/web3.js';
+import BN from 'bn.js';
 import {
     createMint,
     getOrCreateAssociatedTokenAccount,
@@ -10,7 +11,59 @@ import {
 } from '@solana/spl-token';
 import {SolanaTokenFinancing} from "../target/types/solana_token_financing";
 
-describe("functional testing", () => {
+const TOKEN_DECIMALS: number = 2;
+
+function wait(seconds: number): Promise<void> {
+    return new Promise(resolve => {
+        setTimeout(() => {
+            resolve();
+        }, seconds * 1000);
+    });
+}
+
+async function print_users_accounts(
+    connection: anchor.web3.Connection,
+    nemeosAccount: anchor.web3.PublicKey,
+    sellerAccount: anchor.web3.PublicKey,
+    sellerTokenAccount: anchor.web3.PublicKey,
+    borrowerAccount: anchor.web3.PublicKey,
+    borrowerTokenAccount?: anchor.web3.PublicKey,
+): Promise<void> {
+    const nemeosSol = await connection.getBalance(nemeosAccount);
+    console.log(`Nemeos: ${nemeosSol / anchor.web3.LAMPORTS_PER_SOL} SOL`);
+
+    const sellerSol = await connection.getBalance(sellerAccount);
+    const sellerTokenInfo = await connection.getTokenAccountBalance(sellerTokenAccount);
+    const sellerTokens = sellerTokenInfo.value.uiAmount;
+    console.log(`Seller: ${sellerSol / anchor.web3.LAMPORTS_PER_SOL} SOL, ${sellerTokens} tokens`);
+
+    const borrowerSol = await connection.getBalance(borrowerAccount);
+    if (borrowerTokenAccount) {
+        const borrowerTokenInfo = await connection.getTokenAccountBalance(borrowerTokenAccount);
+        const borrowerTokens = borrowerTokenInfo.value.uiAmount;
+        console.log(`Borrower: ${borrowerSol / anchor.web3.LAMPORTS_PER_SOL} SOL, ${borrowerTokens} tokens`);
+    } else {
+        console.log(`Borrower: ${borrowerSol / anchor.web3.LAMPORTS_PER_SOL} SOL`);
+    }
+}
+
+async function print_vault(connection: anchor.web3.Connection, program: Program<SolanaTokenFinancing>, mint: anchor.web3.PublicKey): Promise<void> {
+    const [vaultTokenAccount, _bumpVaultTokenAccountAddr] = await PublicKey.findProgramAddress(
+        [Buffer.from("nemeos_vault_token_account"), mint.toBuffer()],
+        program.programId
+    );
+    const vaultTokenInfo = await connection.getTokenAccountBalance(vaultTokenAccount);
+    const vaultTokens = vaultTokenInfo.value.uiAmount;
+
+    const [vaultAccountAddr, _bumpVaultAccountAddr] = await PublicKey.findProgramAddress(
+        [Buffer.from("nemeos_vault_account"), mint.toBuffer()],
+        program.programId
+    );
+    const vaultAccount = await program.account.vaultAccount.fetch(vaultAccountAddr);
+    console.log(`Vault: ${vaultTokens} tokens including ${vaultAccount.availableTokens} available`);
+}
+
+describe("solana_token_financing dApp functional testing", () => {
     // Configure the client to use the local cluster.
     anchor.setProvider(anchor.AnchorProvider.env());
 
@@ -18,92 +71,224 @@ describe("functional testing", () => {
     const connection = new Connection('http://127.0.0.1:8899', 'confirmed');
 
     it("Full workflow", async () => {
+        console.log(`*** Initialize accounts and create a SPL token ***`);
         // Create keypairs
+        const sellerKeypair = Keypair.generate();
+        // console.log('Seller address:', sellerKeypair.publicKey.toBase58());
         const nemeosKeypair = Keypair.generate();
-        console.log('Nemeos address:', nemeosKeypair.publicKey.toBase58());
-        const mintKeypair = Keypair.generate();
-        console.log('Mint address:', mintKeypair.publicKey.toBase58());
-        const buyerKeypair = Keypair.generate();
-        console.log('Buyer address:', buyerKeypair.publicKey.toBase58());
+        // console.log('Nemeos address:', nemeosKeypair.publicKey.toBase58());
+        const borrowerKeypair = Keypair.generate();
+        // console.log('Borrower address:', borrowerKeypair.publicKey.toBase58());
 
-        // Airdrops
+        // Create accounts with airdrops
+        let txSellerAirdrop = await connection.requestAirdrop(
+            sellerKeypair.publicKey,
+            5 * LAMPORTS_PER_SOL
+        );
+        await connection.confirmTransaction(txSellerAirdrop);
         let txNemeosAirdrop = await connection.requestAirdrop(
             nemeosKeypair.publicKey,
             5 * LAMPORTS_PER_SOL
         );
         await connection.confirmTransaction(txNemeosAirdrop);
-        let txMintAirdrop = await connection.requestAirdrop(
-            mintKeypair.publicKey,
-            5 * LAMPORTS_PER_SOL
+        let txBorrowerAirdrop = await connection.requestAirdrop(
+            borrowerKeypair.publicKey,
+            50 * LAMPORTS_PER_SOL
         );
-        await connection.confirmTransaction(txMintAirdrop);
-        let txBuyerAirdrop = await connection.requestAirdrop(
-            buyerKeypair.publicKey,
-            100 * LAMPORTS_PER_SOL
-        );
-        await connection.confirmTransaction(txBuyerAirdrop);
+        await connection.confirmTransaction(txBorrowerAirdrop);
 
         // Create a SPL token
         const mint = await createMint(
             connection,
-            mintKeypair, // Payer
-            mintKeypair.publicKey, // Mint authority
+            sellerKeypair, // Payer
+            sellerKeypair.publicKey, // Mint authority
             null, // Freeze authority
-            9, // Decimals
+            TOKEN_DECIMALS, // Decimals
         );
-        console.log('Mint address:', mint.toBase58());
+        // console.log('Mint address:', mint.toBase58());
 
-        // Create an associated token account for Nemeos
-        const nemeosTokenAccount = await getOrCreateAssociatedTokenAccount(
+        // Create an associated token account for the seller
+        const sellerTokenAccount = await getOrCreateAssociatedTokenAccount(
             connection,
-            nemeosKeypair, // Payer
+            sellerKeypair, // Payer
             mint, // SPL token address
-            nemeosKeypair.publicKey // Owner of the token account
+            sellerKeypair.publicKey // Owner of the token account
         );
-        console.log('Nemeos token account:', nemeosTokenAccount.address.toBase58());
+        // console.log('Seller token account:', sellerTokenAccount.address.toBase58());
 
-        // Mint tokens to the user's token account
+        // Mint tokens to the seller's token account
         await mintTo(
             connection,
-            mintKeypair, // Payer
+            sellerKeypair, // Payer
             mint, // SPL token address
-            nemeosTokenAccount.address, // Destination account
-            mintKeypair.publicKey, // Mint authority
-            1_000_000_000 // Amount of tokens to mint (1 token with 9 decimals)
+            sellerTokenAccount.address, // Destination account
+            sellerKeypair.publicKey, // Mint authority
+            1_000 * 100 // Amount of tokens to mint (1_000 token with 2 decimals)
         );
 
-        // Check the balance of the user's token account
-        const nemeosAccountInfo = await getAccount(connection, nemeosTokenAccount.address);
-        console.log('Nemeos account balance:', Number(nemeosAccountInfo.amount) / 1_000_000_000);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);
 
-        // Create a token account for the buyer
-        const buyerTokenAccount = await getOrCreateAssociatedTokenAccount(
-            connection,
-            mintKeypair, // Payer
-            mint, // SPL token address
-            buyerKeypair.publicKey // Owner of the token account
+        // TEST : initialize_token_vault
+        console.log(`*** Initialize token vault ***`);
+        let txInitVault = await program.methods
+            .initializeTokenVault(new BN(3))
+            .accounts({
+                mint: mint,
+                seller: sellerKeypair.publicKey,
+                nemeos: nemeosKeypair.publicKey,
+            })
+            .signers([sellerKeypair, nemeosKeypair])
+            .rpc();
+        await connection.confirmTransaction(txInitVault);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);
+        await print_vault(connection, program, mint);
+
+        // TEST : deposit_tokens
+        console.log(`*** Deposit tokens ***`);
+        let txTokenDeposit = await program.methods
+            .tokenDeposit(new BN(100 * 10 ** TOKEN_DECIMALS))
+            .accounts({
+                seller: sellerKeypair.publicKey,
+                sellerTokenAccount: sellerTokenAccount.address,
+                mint: mint,
+            })
+            .signers([sellerKeypair])
+            .rpc();
+        await connection.confirmTransaction(txTokenDeposit);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);
+        await print_vault(connection, program, mint);
+
+        // TEST : create_loan
+        console.log(`*** Create loan ***`);
+        let txCreateLoan = await program.methods
+            .createLoan(new BN(10 * anchor.web3.LAMPORTS_PER_SOL), new BN(5 * 10 ** TOKEN_DECIMALS), new BN(2), new BN(3))
+            .accounts({
+                seller: sellerKeypair.publicKey,
+                borrower: borrowerKeypair.publicKey,
+                nemeos: nemeosKeypair.publicKey,
+                mint: mint,
+            })
+            .signers([borrowerKeypair, sellerKeypair])
+            .rpc();
+        await connection.confirmTransaction(txCreateLoan);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);
+        await print_vault(connection, program, mint);
+
+        // // TEST : full early repayment
+        // console.log(`*** Full early repayment ***`);
+        // let txFullEarlyRepayment = await program.methods
+        //     .fullEarlyRepayment()
+        //     .accounts({
+        //         seller: sellerKeypair.publicKey,
+        //         borrower: borrowerKeypair.publicKey,
+        //         nemeos: nemeosKeypair.publicKey,
+        //         mint: mint,
+        //     })
+        //     .signers([borrowerKeypair])
+        //     .rpc();
+        // await connection.confirmTransaction(txFullEarlyRepayment);
+        // let [borrowerTokenAccountEarly] = PublicKey.findProgramAddressSync(
+        //     [Buffer.from("nemeos_borrower_token_account"), mint.toBuffer(), borrowerKeypair.publicKey.toBuffer()],
+        //     program.programId
+        // );
+        // await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerTokenAccountEarly);
+        // await print_vault(connection, program, mint);
+
+        // TEST : payment 1
+        console.log(`*** Payment 1 ***`);
+        await wait(1); // wait 1s
+        let txPayment = await program.methods
+            .payment()
+            .accounts({
+                seller: sellerKeypair.publicKey,
+                borrower: borrowerKeypair.publicKey,
+                mint: mint,
+            })
+            .signers([borrowerKeypair])
+            .rpc();
+        await connection.confirmTransaction(txPayment);
+        let [borrowerTokenAccount] = PublicKey.findProgramAddressSync(
+            [Buffer.from("nemeos_borrower_token_account"), mint.toBuffer(), borrowerKeypair.publicKey.toBuffer()],
+            program.programId
         );
-        console.log('Buyer token account:', buyerTokenAccount.address.toBase58());
+        await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerTokenAccount);
+        await print_vault(connection, program, mint);
 
+        // // TEST : close_loan after payment 1
+        // console.log(`*** Close loan ***`);
+        // await wait(5); // wait 5s
+        // let txCloseLoanEarlier = await program.methods
+        //     .closeLoan()
+        //     .accounts({
+        //         seller: sellerKeypair.publicKey,
+        //         borrower: borrowerKeypair.publicKey,
+        //         mint: mint,
+        //     })
+        //     .signers([])
+        //     .rpc();
+        // await connection.confirmTransaction(txCloseLoanEarlier);
+        // await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);
+        // await print_vault(connection, program, mint);
 
-        // Transfer tokens from Nemeos to the buyer
-        await transfer(
-            connection,
-            nemeosKeypair, // Payer
-            nemeosTokenAccount.address, // Source token account
-            buyerTokenAccount.address, // Destination token account
-            nemeosKeypair.publicKey, // Authority (owner of the source account)
-            100_000_000 // Amount to transfer (0.1 tokens)
-        );
-        console.log('Transferred 0.1 tokens from Nemeos to the buyer.');
+        // // TEST : full early repayment
+        // console.log(`*** Full early repayment ***`);
+        // let txFullEarlyRepayment = await program.methods
+        //     .fullEarlyRepayment()
+        //     .accounts({
+        //         seller: sellerKeypair.publicKey,
+        //         borrower: borrowerKeypair.publicKey,
+        //         nemeos: nemeosKeypair.publicKey,
+        //         mint: mint,
+        //     })
+        //     .signers([borrowerKeypair])
+        //     .rpc();
+        // await connection.confirmTransaction(txFullEarlyRepayment);
+        // await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerTokenAccount);
+        // await print_vault(connection, program, mint);
 
-        // Check the balance of Nemeos' and the buyer's token accounts
-        const nemeosAccountInfo2 = await getAccount(connection, nemeosTokenAccount.address);
-        console.log('Nemeos account balance after transfer:', Number(nemeosAccountInfo2.amount) / LAMPORTS_PER_SOL);
+        // TEST : payment 2
+        console.log(`*** Payment 2 ***`);
+        await wait(3); // wait 3s
+        let txPayment2 = await program.methods
+            .payment()
+            .accounts({
+                seller: sellerKeypair.publicKey,
+                borrower: borrowerKeypair.publicKey,
+                mint: mint,
+            })
+            .signers([borrowerKeypair])
+            .rpc();
+        await connection.confirmTransaction(txPayment2);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerTokenAccount);
+        await print_vault(connection, program, mint);
 
-        const buyerAccountInfo = await getAccount(connection, buyerTokenAccount.address);
+        // // TEST : payment 3 (SHOULD FAIL)
+        // console.log(`*** Payment 3 ***`);
+        // await wait(3); // wait 3s
+        // let txPayment3 = await program.methods
+        //     .payment()
+        //     .accounts({
+        //         seller: sellerKeypair.publicKey,
+        //         borrower: borrowerKeypair.publicKey,
+        //         mint: mint,
+        //     })
+        //     .signers([borrowerKeypair])
+        //     .rpc();
+        // await connection.confirmTransaction(txPayment3);
 
-        console.log('Buyer account balance:', Number(buyerAccountInfo.amount) / LAMPORTS_PER_SOL);
-
+        // TEST : close_loan
+        console.log(`*** Close loan ***`);
+        let txCloseLoan = await program.methods
+            .closeLoan()
+            .accounts({
+                seller: sellerKeypair.publicKey,
+                borrower: borrowerKeypair.publicKey,
+                mint: mint,
+            })
+            .signers([])
+            .rpc();
+        await connection.confirmTransaction(txCloseLoan);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);
+        await print_vault(connection, program, mint);
     });
 });
