@@ -11,6 +11,8 @@ import {
 } from '@solana/spl-token';
 import {SolanaTokenFinancing} from "../target/types/solana_token_financing";
 
+const TOKEN_DECIMALS: number = 2;
+
 function wait(seconds: number): Promise<void> {
     return new Promise(resolve => {
         setTimeout(() => {
@@ -100,7 +102,7 @@ describe("test 2", () => {
             sellerKeypair, // Payer
             sellerKeypair.publicKey, // Mint authority
             null, // Freeze authority
-            2, // Decimals
+            TOKEN_DECIMALS, // Decimals
         );
         // console.log('Mint address:', mint.toBase58());
 
@@ -143,7 +145,7 @@ describe("test 2", () => {
         // TEST : deposit_tokens
         console.log(`*** Deposit tokens ****`);
         let txTokenDeposit = await program.methods
-            .tokenDeposit(new BN(100))
+            .tokenDeposit(new BN(100 * 10 ** TOKEN_DECIMALS))
             .accounts({
                 seller: sellerKeypair.publicKey,
                 sellerTokenAccount: sellerTokenAccount.address,
@@ -159,7 +161,7 @@ describe("test 2", () => {
         // TEST : create_loan
         console.log(`*** Create loan ****`);
         let txCreateLoan = await program.methods
-            .createLoan(new BN(10), new BN(5), new BN(2), new BN(3))
+            .createLoan(new BN(10 * anchor.web3.LAMPORTS_PER_SOL), new BN(5 * 10 ** TOKEN_DECIMALS), new BN(2), new BN(3))
             .accounts({
                 seller: sellerKeypair.publicKey,
                 borrower: borrowerKeypair.publicKey,
