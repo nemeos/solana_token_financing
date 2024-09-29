@@ -8,6 +8,7 @@ pub fn initialize_token_vault(
     ctx: Context<InitializeTokenAccount>,
     annual_interest_rate: u8,
 ) -> Result<()> {
+    // TODO it is the same annual_interest_rate for all loans on this token
     let vault_account = &mut ctx.accounts.vault_account;
     vault_account.nemeos = ctx.accounts.nemeos.key();
     vault_account.seller = ctx.accounts.seller.key();
@@ -50,6 +51,7 @@ pub struct InitializeTokenAccount<'info> {
 
     #[account(mut)]
     seller: Signer<'info>,
+    // TODO Nemeos account is saved during this instruction (it could be a constant in the program)
     nemeos: Signer<'info>,
 
     system_program: Program<'info, System>,

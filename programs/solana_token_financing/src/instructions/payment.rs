@@ -9,9 +9,10 @@ use crate::states::{
 };
 
 pub fn payment(ctx: Context<Payment>) -> Result<()> {
+    // TODO all payments are identical (same amount of tokens and same amount of SOL)
     let loan_account = &mut ctx.accounts.loan_account;
 
-    // Checks
+    // Check that it is the right time to repay the loan (and that the loan is not finished)
     let now = Clock::get()?.unix_timestamp as u64;
     if loan_account.end_period < now {
         // TODO close the loan
@@ -54,6 +55,7 @@ pub fn payment(ctx: Context<Payment>) -> Result<()> {
     );
     token::transfer(cpi_ctx, loan_account.nb_of_tokens_per_payment)?;
 
+    // Update loan account
     loan_account.start_period = loan_account.end_period;
     loan_account.end_period += loan_account.period_duration_in_seconds;
     loan_account.nb_remaining_payments -= 1;

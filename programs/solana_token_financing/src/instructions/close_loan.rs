@@ -10,6 +10,7 @@ pub fn close_loan(ctx: Context<CloseLoan>) -> Result<()> {
     let loan_account = &ctx.accounts.loan_account;
 
     if loan_account.nb_remaining_payments == 0 {
+        // Close loan without updating the number of available tokens in the vault
         return Ok(());
     }
 
@@ -23,8 +24,11 @@ pub fn close_loan(ctx: Context<CloseLoan>) -> Result<()> {
                 (loan_account.nb_remaining_payments as u64) * loan_account.nb_of_tokens_per_payment,
             )
             .ok_or(ErrorCode::Overflow)?;
+        // Close loan
         return Ok(());
     }
+
+    // Do not close the loan
     Err(ErrorCode::ImpossibleToCloseLoan.into())
 }
 
@@ -48,6 +52,7 @@ pub struct CloseLoan<'info> {
     vault_account: Account<'info, VaultAccount>,
 
     #[account(mut)]
+    // TODO no signer => everyone could close the loan
     borrower: SystemAccount<'info>,
     seller: SystemAccount<'info>,
 

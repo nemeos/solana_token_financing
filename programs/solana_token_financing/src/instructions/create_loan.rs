@@ -26,13 +26,9 @@ pub fn create_loan(
     //               * loan_amount / 2
     let loan_amount = (nb_payments as u64) * payment_amount;
     let loan_duration_in_seconds = (nb_payments as u64) * period_duration_in_seconds;
-    let mut fees_amount =
+    let fees_amount =
         (vault_account.annual_interest_rate as u64) * loan_duration_in_seconds * loan_amount
             / (100 * SECONDS_PER_YEAR * 2);
-    // TODO maybe could be removed
-    if fees_amount == 0 {
-        fees_amount = 1;
-    }
 
     let ix = anchor_lang::solana_program::system_instruction::transfer(
         &ctx.accounts.borrower.key(),
@@ -65,6 +61,7 @@ pub fn create_loan(
 
 #[derive(Accounts)]
 pub struct CreateLoan<'info> {
+    // TODO if the same borrower would like to create a loan for the same token, he should create a new account
     #[account(
             init,
             payer = borrower,
