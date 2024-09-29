@@ -43,6 +43,10 @@ pub mod solana_token_financing {
         instructions::payment(ctx)
     }
 
+    pub fn full_early_repayment(ctx: Context<FullEarlyRepayment>) -> Result<()> {
+        instructions::full_early_repayment(ctx)
+    }
+
     pub fn close_loan(ctx: Context<CloseLoan>) -> Result<()> {
         instructions::close_loan(ctx)
     }

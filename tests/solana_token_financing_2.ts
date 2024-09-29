@@ -140,8 +140,8 @@ describe("test 2", () => {
             .signers([sellerKeypair, nemeosKeypair])
             .rpc();
         await connection.confirmTransaction(txInitVault);
-
         await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);
+        await print_vault(connection, program, mint);
 
         // TEST : deposit_tokens
         console.log(`*** Deposit tokens ***`);
@@ -155,7 +155,6 @@ describe("test 2", () => {
             .signers([sellerKeypair])
             .rpc();
         await connection.confirmTransaction(txTokenDeposit);
-
         await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);
         await print_vault(connection, program, mint);
 
@@ -172,9 +171,28 @@ describe("test 2", () => {
             .signers([borrowerKeypair, sellerKeypair])
             .rpc();
         await connection.confirmTransaction(txCreateLoan);
-
         await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);
         await print_vault(connection, program, mint);
+
+        // // TEST : full early repayment
+        // console.log(`*** Full early repayment ***`);
+        // let txFullEarlyRepayment = await program.methods
+        //     .fullEarlyRepayment()
+        //     .accounts({
+        //         seller: sellerKeypair.publicKey,
+        //         borrower: borrowerKeypair.publicKey,
+        //         nemeos: nemeosKeypair.publicKey,
+        //         mint: mint,
+        //     })
+        //     .signers([borrowerKeypair])
+        //     .rpc();
+        // await connection.confirmTransaction(txFullEarlyRepayment);
+        // let [borrowerTokenAccountEarly] = PublicKey.findProgramAddressSync(
+        //     [Buffer.from("nemeos_borrower_token_account"), mint.toBuffer(), borrowerKeypair.publicKey.toBuffer()],
+        //     program.programId
+        // );
+        // await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerTokenAccountEarly);
+        // await print_vault(connection, program, mint);
 
         // TEST : payment 1
         console.log(`*** Payment 1 ***`);
@@ -189,12 +207,10 @@ describe("test 2", () => {
             .signers([borrowerKeypair])
             .rpc();
         await connection.confirmTransaction(txPayment);
-
         let [borrowerTokenAccount] = PublicKey.findProgramAddressSync(
             [Buffer.from("nemeos_borrower_token_account"), mint.toBuffer(), borrowerKeypair.publicKey.toBuffer()],
             program.programId
         );
-
         await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerTokenAccount);
         await print_vault(connection, program, mint);
 
@@ -214,6 +230,22 @@ describe("test 2", () => {
         // await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);
         // await print_vault(connection, program, mint);
 
+        // // TEST : full early repayment
+        // console.log(`*** Full early repayment ***`);
+        // let txFullEarlyRepayment = await program.methods
+        //     .fullEarlyRepayment()
+        //     .accounts({
+        //         seller: sellerKeypair.publicKey,
+        //         borrower: borrowerKeypair.publicKey,
+        //         nemeos: nemeosKeypair.publicKey,
+        //         mint: mint,
+        //     })
+        //     .signers([borrowerKeypair])
+        //     .rpc();
+        // await connection.confirmTransaction(txFullEarlyRepayment);
+        // await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerTokenAccount);
+        // await print_vault(connection, program, mint);
+
         // TEST : payment 2
         console.log(`*** Payment 2 ***`);
         await wait(3); // wait 3s
@@ -227,7 +259,6 @@ describe("test 2", () => {
             .signers([borrowerKeypair])
             .rpc();
         await connection.confirmTransaction(txPayment2);
-
         await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerTokenAccount);
         await print_vault(connection, program, mint);
 
@@ -257,7 +288,6 @@ describe("test 2", () => {
             .signers([])
             .rpc();
         await connection.confirmTransaction(txCloseLoan);
-
         await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);
         await print_vault(connection, program, mint);
     });
