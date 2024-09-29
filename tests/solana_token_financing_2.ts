@@ -71,6 +71,7 @@ describe("test 2", () => {
     const connection = new Connection('http://127.0.0.1:8899', 'confirmed');
 
     it("Full workflow", async () => {
+        console.log(`*** Initialize accounts and create a SPL token ***`);
         // Create keypairs
         const sellerKeypair = Keypair.generate();
         // console.log('Seller address:', sellerKeypair.publicKey.toBase58());
@@ -128,7 +129,7 @@ describe("test 2", () => {
         await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);
 
         // TEST : initialize_token_vault
-        console.log(`*** Initialize token vault ****`);
+        console.log(`*** Initialize token vault ***`);
         let txInitVault = await program.methods
             .initializeTokenVault(new BN(3))
             .accounts({
@@ -143,7 +144,7 @@ describe("test 2", () => {
         await print_users_accounts(connection, nemeosKeypair.publicKey, sellerKeypair.publicKey, sellerTokenAccount.address, borrowerKeypair.publicKey);
 
         // TEST : deposit_tokens
-        console.log(`*** Deposit tokens ****`);
+        console.log(`*** Deposit tokens ***`);
         let txTokenDeposit = await program.methods
             .tokenDeposit(new BN(100 * 10 ** TOKEN_DECIMALS))
             .accounts({
@@ -159,7 +160,7 @@ describe("test 2", () => {
         await print_vault(connection, program, mint);
 
         // TEST : create_loan
-        console.log(`*** Create loan ****`);
+        console.log(`*** Create loan ***`);
         let txCreateLoan = await program.methods
             .createLoan(new BN(10 * anchor.web3.LAMPORTS_PER_SOL), new BN(5 * 10 ** TOKEN_DECIMALS), new BN(2), new BN(3))
             .accounts({
@@ -176,7 +177,7 @@ describe("test 2", () => {
         await print_vault(connection, program, mint);
 
         // TEST : payment 1
-        console.log(`*** Payment 1 ****`);
+        console.log(`*** Payment 1 ***`);
         await wait(1); // wait 1s
         let txPayment = await program.methods
             .payment()
@@ -198,7 +199,7 @@ describe("test 2", () => {
         await print_vault(connection, program, mint);
 
         // // TEST : close_loan after payment 1
-        // console.log(`*** Close loan ****`);
+        // console.log(`*** Close loan ***`);
         // await wait(5); // wait 5s
         // let txCloseLoanEarlier = await program.methods
         //     .closeLoan()
@@ -214,7 +215,7 @@ describe("test 2", () => {
         // await print_vault(connection, program, mint);
 
         // TEST : payment 2
-        console.log(`*** Payment 2 ****`);
+        console.log(`*** Payment 2 ***`);
         await wait(3); // wait 3s
         let txPayment2 = await program.methods
             .payment()
@@ -231,7 +232,7 @@ describe("test 2", () => {
         await print_vault(connection, program, mint);
 
         // // TEST : payment 3 (SHOULD FAIL)
-        // console.log(`*** Payment 3 ****`);
+        // console.log(`*** Payment 3 ***`);
         // await wait(3); // wait 3s
         // let txPayment3 = await program.methods
         //     .payment()
@@ -245,7 +246,7 @@ describe("test 2", () => {
         // await connection.confirmTransaction(txPayment3);
 
         // TEST : close_loan
-        console.log(`*** Close loan ****`);
+        console.log(`*** Close loan ***`);
         let txCloseLoan = await program.methods
             .closeLoan()
             .accounts({
