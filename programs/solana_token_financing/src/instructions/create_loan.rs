@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
+use crate::constants::USDC_PUBKEY;
 use crate::errors::ErrorCode;
 use crate::states::{loan_account::LoanAccount, vault_account::VaultAccount};
 
@@ -30,7 +31,7 @@ pub fn create_loan(
         (vault_account.annual_interest_rate as u64) * loan_duration_in_seconds * loan_amount
             / (100 * SECONDS_PER_YEAR * 2);
 
-    if ctx.accounts.nemeos_payment_account.mint != vault_account.payment_currency {
+    if ctx.accounts.nemeos_payment_account.mint != USDC_PUBKEY {
         return Err(ErrorCode::WrongCurrency.into());
     }
     if ctx.accounts.nemeos_payment_account.owner != vault_account.nemeos {
@@ -50,7 +51,6 @@ pub fn create_loan(
     loan_account.borrower = ctx.accounts.borrower.key();
     loan_account.seller = ctx.accounts.seller.key();
     loan_account.nemeos = vault_account.nemeos;
-    loan_account.payment_currency = vault_account.payment_currency;
     loan_account.payment_amount = payment_amount;
     loan_account.nb_of_tokens_per_payment = nb_of_tokens_per_payment;
     loan_account.nb_remaining_payments = nb_payments;

@@ -10,5 +10,4 @@ pub struct VaultAccount {
     pub seller: Pubkey,
     pub available_tokens: u64,
     pub annual_interest_rate: u8,
-    pub payment_currency: Pubkey,
 }

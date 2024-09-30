@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
+use crate::constants::USDC_PUBKEY;
 use crate::errors::ErrorCode;
 use crate::states::{loan_account::LoanAccount, vault_account::TokenAccountOwnerPda};
 
@@ -21,7 +22,7 @@ pub fn full_early_repayment(ctx: Context<FullEarlyRepayment>) -> Result<()> {
     // Fees are set at 3% of the remaining principal
     let fees_amount =
         (loan_account.nb_remaining_payments as u64) * loan_account.payment_amount * 3 / 100;
-    if ctx.accounts.nemeos_payment_account.mint != loan_account.payment_currency {
+    if ctx.accounts.nemeos_payment_account.mint != USDC_PUBKEY {
         return Err(ErrorCode::WrongCurrency.into());
     }
     if ctx.accounts.nemeos_payment_account.owner != loan_account.nemeos {
@@ -37,7 +38,7 @@ pub fn full_early_repayment(ctx: Context<FullEarlyRepayment>) -> Result<()> {
     token::transfer(cpi_context, fees_amount)?;
 
     // Transfer from borrower to seller
-    if ctx.accounts.seller_payment_account.mint != loan_account.payment_currency {
+    if ctx.accounts.seller_payment_account.mint != USDC_PUBKEY {
         return Err(ErrorCode::WrongCurrency.into());
     }
     if ctx.accounts.seller_payment_account.owner != loan_account.seller {
