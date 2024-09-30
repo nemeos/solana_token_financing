@@ -338,5 +338,19 @@ describe("solana_token_financing dApp functional testing", () => {
         await connection.confirmTransaction(txCloseLoan);
         await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount);
         await print_vault(connection, program, mint);
+
+        // TEST : close_loan
+        console.log(`*** Close vault accounts ***`);
+        let txCloseVaultAccounts = await program.methods
+            .closeVaultAccounts()
+            .accounts({
+                seller: sellerKeypair.publicKey,
+                sellerTokenAccount: sellerTokenAccount.address,
+                mint: mint,
+            })
+            .signers([sellerKeypair])
+            .rpc();
+        await connection.confirmTransaction(txCloseVaultAccounts);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount);
     });
 });

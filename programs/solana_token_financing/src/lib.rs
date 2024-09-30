@@ -51,4 +51,8 @@ pub mod solana_token_financing {
     pub fn close_loan(ctx: Context<CloseLoan>) -> Result<()> {
         instructions::close_loan(ctx)
     }
+
+    pub fn close_vault_accounts(ctx: Context<CloseVaultAccounts>) -> Result<()> {
+        instructions::close_vault_accounts(ctx)
+    }
 }

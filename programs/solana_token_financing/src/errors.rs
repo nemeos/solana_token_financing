@@ -20,6 +20,9 @@ pub enum ErrorCode {
     #[msg("Impossible to close loan: the loan is still in progress.")]
     ImpossibleToCloseLoan,
 
+    #[msg("Impossible to vault accounts: the vault account still holds tokens that have already been promised.")]
+    ImpossibleToCloseVaultAccounts,
+
     #[msg("The payment currency is not the same as the one expected.")]
     WrongCurrency,
 
