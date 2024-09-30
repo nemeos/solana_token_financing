@@ -43,4 +43,7 @@ pub enum ErrorCode {
 
     #[msg("The upfront payment has already been payed.")]
     UpfrontAlreadyPayed,
+
+    #[msg("Not enough available tokens.")]
+    NotEnoughAvailableTokens,
 }

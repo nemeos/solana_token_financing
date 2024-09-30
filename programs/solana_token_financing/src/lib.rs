@@ -24,6 +24,10 @@ pub mod solana_token_financing {
         instructions::token_deposit(ctx, amount)
     }
 
+    pub fn token_withdraw(ctx: Context<TokenWithdraw>, amount: u64) -> Result<()> {
+        instructions::token_withdraw(ctx, amount)
+    }
+
     pub fn create_loan(
         ctx: Context<CreateLoan>,
         lot_quantity: u8,
