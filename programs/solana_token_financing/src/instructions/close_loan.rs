@@ -51,7 +51,6 @@ pub struct CloseLoan<'info> {
     vault_account: Account<'info, VaultAccount>,
 
     #[account(mut)]
-    // TODO no signer => everyone could close the loan
     borrower: SystemAccount<'info>,
 
     mint: Account<'info, Mint>,

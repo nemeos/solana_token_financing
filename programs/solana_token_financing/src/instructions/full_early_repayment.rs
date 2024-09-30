@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
-use crate::constants::USDC_PUBKEY;
+use crate::constants::{NEMEOS_PUBKEY, USDC_PUBKEY};
 use crate::errors::ErrorCode;
 use crate::states::{loan_account::LoanAccount, vault_account::TokenAccountOwnerPda};
 
@@ -25,7 +25,7 @@ pub fn full_early_repayment(ctx: Context<FullEarlyRepayment>) -> Result<()> {
     if ctx.accounts.nemeos_payment_account.mint != USDC_PUBKEY {
         return Err(ErrorCode::WrongCurrency.into());
     }
-    if ctx.accounts.nemeos_payment_account.owner != loan_account.nemeos {
+    if ctx.accounts.nemeos_payment_account.owner != NEMEOS_PUBKEY {
         return Err(ErrorCode::WrongReceiver.into());
     }
     let cpi_accounts = Transfer {

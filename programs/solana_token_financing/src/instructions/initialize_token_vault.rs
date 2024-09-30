@@ -1,16 +1,17 @@
 use anchor_lang::prelude::*;
 
-use anchor_spl::token::{Mint, Token, TokenAccount};
-
+use crate::constants::NEMEOS_PUBKEY;
 use crate::states::vault_account::{TokenAccountOwnerPda, VaultAccount};
+use anchor_spl::token::{Mint, Token, TokenAccount};
 
 pub fn initialize_token_vault(
     ctx: Context<InitializeTokenAccount>,
     annual_interest_rate: u8,
 ) -> Result<()> {
-    // TODO it is the same annual_interest_rate for all loans on this token
+    if ctx.accounts.nemeos.key() != NEMEOS_PUBKEY {
+        return Err(crate::errors::ErrorCode::NemeosInstruction.into());
+    }
     let vault_account = &mut ctx.accounts.vault_account;
-    vault_account.nemeos = ctx.accounts.nemeos.key();
     vault_account.seller = ctx.accounts.seller.key();
     vault_account.available_tokens = 0;
     vault_account.annual_interest_rate = annual_interest_rate;
@@ -21,7 +22,7 @@ pub fn initialize_token_vault(
 pub struct InitializeTokenAccount<'info> {
     #[account(
             init_if_needed,
-            payer = seller,
+            payer = nemeos,
             seeds=[b"token_account_owner_pda"],
             bump,
             space = 8
@@ -30,7 +31,7 @@ pub struct InitializeTokenAccount<'info> {
 
     #[account(
             init,
-            payer = seller,
+            payer = nemeos,
             seeds=[b"nemeos_vault_token_account", mint.key().as_ref()],
             token::mint=mint,
             token::authority=token_account_owner_pda,
@@ -40,7 +41,7 @@ pub struct InitializeTokenAccount<'info> {
 
     #[account(
             init,
-            payer = seller,
+            payer = nemeos,
             seeds=[b"nemeos_vault_account", mint.key().as_ref()],
             space= 8 + VaultAccount::INIT_SPACE,
             bump
@@ -49,9 +50,8 @@ pub struct InitializeTokenAccount<'info> {
 
     mint: Account<'info, Mint>,
 
+    seller: SystemAccount<'info>,
     #[account(mut)]
-    seller: Signer<'info>,
-    // TODO Nemeos account is saved during this instruction (it could be a constant in the program)
     nemeos: Signer<'info>,
 
     system_program: Program<'info, System>,

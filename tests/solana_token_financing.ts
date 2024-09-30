@@ -19,8 +19,10 @@ const usdcSecretKey = new Uint8Array([
     24, 241, 73, 229, 179, 188, 231, 249, 4, 104, 73, 208, 231, 223, 235, 150,
     243, 138, 134, 203, 162, 11, 66, 175, 217, 219, 38, 5, 106, 164, 53
 ]);
-
 const usdcKeypair = Keypair.fromSecretKey(usdcSecretKey);
+
+const nemeosSecretKey = new Uint8Array([218, 148, 167, 119, 201, 37, 97, 57, 66, 144, 30, 136, 77, 164, 144, 110, 11, 160, 213, 58, 108, 194, 97, 221, 163, 254, 90, 210, 139, 172, 80, 200, 126, 126, 148, 150, 215, 210, 102, 25, 54, 38, 163, 50, 149, 195, 78, 33, 157, 3, 67, 149, 70, 58, 100, 128, 244, 54, 5, 15, 195, 105, 251, 222]);
+const nemeosKeypair = Keypair.fromSecretKey(nemeosSecretKey);
 
 function wait(seconds: number): Promise<void> {
     return new Promise(resolve => {
@@ -91,14 +93,18 @@ describe("solana_token_financing dApp functional testing", () => {
     it("Full workflow", async () => {
         console.log(`*** Initialize accounts and create a SPL token ***`);
         // Create keypairs
+        const adminKeypair = Keypair.generate();
+        // Create keypairs
         const sellerKeypair = Keypair.generate();
         // console.log('Seller address:', sellerKeypair.publicKey.toBase58());
-        const nemeosKeypair = Keypair.generate();
-        // console.log('Nemeos address:', nemeosKeypair.publicKey.toBase58());
         const borrowerKeypair = Keypair.generate();
         // console.log('Borrower address:', borrowerKeypair.publicKey.toBase58());
 
         // Create accounts with airdrops
+        let txAdminAirdrop = await connection.requestAirdrop(
+            adminKeypair.publicKey,
+            5 * LAMPORTS_PER_SOL
+        );
         let txSellerAirdrop = await connection.requestAirdrop(
             sellerKeypair.publicKey,
             5 * LAMPORTS_PER_SOL
@@ -118,35 +124,35 @@ describe("solana_token_financing dApp functional testing", () => {
         // Create payment currency and fill accounts
         const usdcMint = await createMint(
             connection,
-            sellerKeypair, // Payer
-            sellerKeypair.publicKey, // Mint authority
+            adminKeypair, // Payer
+            adminKeypair.publicKey, // Mint authority
             null, // Freeze authority
             TOKEN_DECIMALS, // Decimals
             usdcKeypair,
         );
         const borrowerPaymentAccount = await getOrCreateAssociatedTokenAccount(
             connection,
-            sellerKeypair, // Payer
+            adminKeypair, // Payer
             usdcMint, // SPL token address
             borrowerKeypair.publicKey // Owner of the token account
         );
         await mintTo(
             connection,
-            sellerKeypair, // Payer
+            adminKeypair, // Payer
             usdcMint, // SPL token address
             borrowerPaymentAccount.address, // Destination account
-            sellerKeypair.publicKey, // Mint authority
+            adminKeypair.publicKey, // Mint authority
             1_000 * 10 ** TOKEN_DECIMALS // Amount of tokens to mint (1_000 token)
         );
         const sellerPaymentAccount = await getOrCreateAssociatedTokenAccount(
             connection,
-            sellerKeypair, // Payer
+            adminKeypair, // Payer
             usdcMint, // SPL token address
             sellerKeypair.publicKey // Owner of the token account
         );
         const nemeosPaymentAccount = await getOrCreateAssociatedTokenAccount(
             connection,
-            sellerKeypair, // Payer
+            adminKeypair, // Payer
             usdcMint, // SPL token address
             nemeosKeypair.publicKey // Owner of the token account
         );
@@ -154,8 +160,8 @@ describe("solana_token_financing dApp functional testing", () => {
         // Create a SPL token
         const mint = await createMint(
             connection,
-            sellerKeypair, // Payer
-            sellerKeypair.publicKey, // Mint authority
+            adminKeypair, // Payer
+            adminKeypair.publicKey, // Mint authority
             null, // Freeze authority
             TOKEN_DECIMALS, // Decimals
         );
@@ -164,7 +170,7 @@ describe("solana_token_financing dApp functional testing", () => {
         // Create an associated token account for the seller
         const sellerTokenAccount = await getOrCreateAssociatedTokenAccount(
             connection,
-            sellerKeypair, // Payer
+            adminKeypair, // Payer
             mint, // SPL token address
             sellerKeypair.publicKey // Owner of the token account
         );
@@ -173,10 +179,10 @@ describe("solana_token_financing dApp functional testing", () => {
         // Mint tokens to the seller's token account
         await mintTo(
             connection,
-            sellerKeypair, // Payer
+            adminKeypair, // Payer
             mint, // SPL token address
             sellerTokenAccount.address, // Destination account
-            sellerKeypair.publicKey, // Mint authority
+            adminKeypair.publicKey, // Mint authority
             1_000 * 10 ** TOKEN_DECIMALS // Amount of tokens to mint (1_000 token)
         );
 
@@ -191,7 +197,7 @@ describe("solana_token_financing dApp functional testing", () => {
                 seller: sellerKeypair.publicKey,
                 nemeos: nemeosKeypair.publicKey,
             })
-            .signers([sellerKeypair, nemeosKeypair])
+            .signers([nemeosKeypair])
             .rpc();
         await connection.confirmTransaction(txInitVault);
         await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address);

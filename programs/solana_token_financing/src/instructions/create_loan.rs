@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
-use crate::constants::USDC_PUBKEY;
+use crate::constants::{NEMEOS_PUBKEY, USDC_PUBKEY};
 use crate::errors::ErrorCode;
 use crate::states::{loan_account::LoanAccount, vault_account::VaultAccount};
 
@@ -34,7 +34,7 @@ pub fn create_loan(
     if ctx.accounts.nemeos_payment_account.mint != USDC_PUBKEY {
         return Err(ErrorCode::WrongCurrency.into());
     }
-    if ctx.accounts.nemeos_payment_account.owner != vault_account.nemeos {
+    if ctx.accounts.nemeos_payment_account.owner != NEMEOS_PUBKEY {
         return Err(ErrorCode::WrongReceiver.into());
     }
     let cpi_accounts = Transfer {
@@ -50,7 +50,6 @@ pub fn create_loan(
     let loan_account = &mut ctx.accounts.loan_account;
     loan_account.borrower = ctx.accounts.borrower.key();
     loan_account.seller = ctx.accounts.seller.key();
-    loan_account.nemeos = vault_account.nemeos;
     loan_account.payment_amount = payment_amount;
     loan_account.nb_of_tokens_per_payment = nb_of_tokens_per_payment;
     loan_account.nb_remaining_payments = nb_payments;

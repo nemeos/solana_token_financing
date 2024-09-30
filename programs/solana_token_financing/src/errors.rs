@@ -28,4 +28,7 @@ pub enum ErrorCode {
 
     #[msg("The payment receiver is not the same as the one expected.")]
     WrongReceiver,
+
+    #[msg("The instruction is not from Nemeos.")]
+    NemeosInstruction,
 }
