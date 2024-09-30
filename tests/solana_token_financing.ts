@@ -236,6 +236,26 @@ describe("solana_token_financing dApp functional testing", () => {
         await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address);
         await print_vault(connection, program, mint);
 
+        // TEST : upfront payment
+        console.log(`*** Upfront payment ***`);
+        let txUpfrontPayment = await program.methods
+            .upfrontPayment()
+            .accounts({
+                borrower: borrowerKeypair.publicKey,
+                sellerPaymentAccount: sellerPaymentAccount.address,
+                borrowerPaymentAccount: borrowerPaymentAccount.address,
+                mint: mint,
+            })
+            .signers([borrowerKeypair])
+            .rpc();
+        await connection.confirmTransaction(txUpfrontPayment);
+        let [borrowerTokenAccount] = PublicKey.findProgramAddressSync(
+            [Buffer.from("nemeos_borrower_token_account"), mint.toBuffer(), borrowerKeypair.publicKey.toBuffer()],
+            program.programId
+        );
+        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount);
+        await print_vault(connection, program, mint);
+
         // // TEST : full early repayment
         // console.log(`*** Full early repayment ***`);
         // let txFullEarlyRepayment = await program.methods
@@ -271,10 +291,10 @@ describe("solana_token_financing dApp functional testing", () => {
             .signers([borrowerKeypair])
             .rpc();
         await connection.confirmTransaction(txPayment);
-        let [borrowerTokenAccount] = PublicKey.findProgramAddressSync(
-            [Buffer.from("nemeos_borrower_token_account"), mint.toBuffer(), borrowerKeypair.publicKey.toBuffer()],
-            program.programId
-        );
+        // let [borrowerTokenAccount] = PublicKey.findProgramAddressSync(
+        //     [Buffer.from("nemeos_borrower_token_account"), mint.toBuffer(), borrowerKeypair.publicKey.toBuffer()],
+        //     program.programId
+        // );
         await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount);
         await print_vault(connection, program, mint);
 

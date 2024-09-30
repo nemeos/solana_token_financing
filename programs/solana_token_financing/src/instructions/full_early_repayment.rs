@@ -9,6 +9,10 @@ use crate::states::{loan_account::LoanAccount, vault_account::TokenAccountOwnerP
 pub fn full_early_repayment(ctx: Context<FullEarlyRepayment>) -> Result<()> {
     let loan_account = &mut ctx.accounts.loan_account;
 
+    if loan_account.upfront_amount != 0 {
+        return Err(ErrorCode::UpfrontPaymentRequired.into());
+    }
+
     let now = Clock::get()?.unix_timestamp as u64;
     if loan_account.end_period < now {
         // TODO close the loan

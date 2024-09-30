@@ -33,6 +33,10 @@ pub mod solana_token_financing {
         instructions::create_loan(ctx, lot_quantity, lot_id, loan_id)
     }
 
+    pub fn upfront_payment(ctx: Context<Payment>) -> Result<()> {
+        instructions::upfront_payment(ctx)
+    }
+
     pub fn payment(ctx: Context<Payment>) -> Result<()> {
         instructions::payment(ctx)
     }

@@ -14,4 +14,6 @@ pub struct LoanAccount {
     pub period_duration_in_seconds: u64,
     pub start_period: u64,
     pub end_period: u64,
+    pub upfront_amount: u64,
+    pub upfront_token_quantity: u64,
 }

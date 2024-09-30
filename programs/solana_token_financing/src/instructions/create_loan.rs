@@ -66,12 +66,14 @@ pub fn create_loan(
     loan_account.loan_id = loan_id;
     loan_account.payment_amount = payment_amount;
     loan_account.nb_of_tokens_per_payment = token_quantity_per_payment;
-    loan_account.nb_remaining_payments = loan.nb_of_payments - 1;
+    loan_account.nb_remaining_payments = loan.nb_of_payments;
     loan_account.period_duration_in_seconds = loan.period_duration_in_seconds;
     let now = Clock::get()?.unix_timestamp as u64;
     loan_account.start_period = now;
-    // TODO the first deadline could be shorter
-    loan_account.end_period = now + loan.period_duration_in_seconds;
+    // 10 minutes (600s) to pay the upfront payment
+    loan_account.end_period = now + 600;
+    loan_account.upfront_amount = upfront_amount;
+    loan_account.upfront_token_quantity = upfront_token_quantity;
 
     Ok(())
 }

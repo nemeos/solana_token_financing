@@ -37,4 +37,10 @@ pub enum ErrorCode {
 
     #[msg("Impossible to create the loan (the loan id does not exist).")]
     LoanNotFound,
+
+    #[msg("The upfront payment is required to initialize the loan.")]
+    UpfrontPaymentRequired,
+
+    #[msg("The upfront payment has already been payed.")]
+    UpfrontAlreadyPayed,
 }

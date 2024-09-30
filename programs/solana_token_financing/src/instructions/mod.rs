@@ -5,6 +5,7 @@ pub mod full_early_repayment;
 pub mod initialize_token_vault;
 pub mod payment;
 pub mod token_deposit;
+pub mod upfront_payment;
 
 pub use close_loan::*;
 pub use close_vault_accounts::*;
@@ -13,3 +14,4 @@ pub use full_early_repayment::*;
 pub use initialize_token_vault::*;
 pub use payment::*;
 pub use token_deposit::*;
+pub use upfront_payment::*;

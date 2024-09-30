@@ -9,6 +9,10 @@ use crate::states::{loan_account::LoanAccount, vault_account::TokenAccountOwnerP
 pub fn payment(ctx: Context<Payment>) -> Result<()> {
     let loan_account = &mut ctx.accounts.loan_account;
 
+    if loan_account.upfront_amount != 0 {
+        return Err(ErrorCode::UpfrontPaymentRequired.into());
+    }
+
     // Check that it is the right time to repay the loan (and that the loan is not finished)
     let now = Clock::get()?.unix_timestamp as u64;
     if loan_account.end_period < now {
@@ -71,13 +75,13 @@ pub struct Payment<'info> {
             seeds=[b"nemeos_loan_account", mint.key().as_ref(), borrower.key().as_ref()],
             bump
     )]
-    loan_account: Account<'info, LoanAccount>,
+    pub loan_account: Account<'info, LoanAccount>,
 
     #[account(
         seeds=[b"token_account_owner_pda"],
         bump
     )]
-    token_account_owner_pda: Account<'info, TokenAccountOwnerPda>,
+    pub token_account_owner_pda: Account<'info, TokenAccountOwnerPda>,
 
     #[account(
             init_if_needed,
@@ -87,24 +91,24 @@ pub struct Payment<'info> {
             token::authority=borrower,
             bump
     )]
-    borrower_token_account: Account<'info, TokenAccount>,
+    pub borrower_token_account: Account<'info, TokenAccount>,
 
     #[account(mut)]
-    borrower: Signer<'info>,
+    pub borrower: Signer<'info>,
     #[account(mut)]
-    seller_payment_account: Account<'info, TokenAccount>,
+    pub seller_payment_account: Account<'info, TokenAccount>,
     #[account(mut)]
-    borrower_payment_account: Account<'info, TokenAccount>,
+    pub borrower_payment_account: Account<'info, TokenAccount>,
 
     #[account(
             mut,
             seeds=[b"nemeos_vault_token_account", mint.key().as_ref()],
             bump
     )]
-    vault_token_account: Account<'info, TokenAccount>,
+    pub vault_token_account: Account<'info, TokenAccount>,
 
-    mint: Account<'info, Mint>,
+    pub mint: Account<'info, Mint>,
 
-    system_program: Program<'info, System>,
-    token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
+    pub token_program: Program<'info, Token>,
 }
