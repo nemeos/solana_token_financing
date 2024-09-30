@@ -42,7 +42,6 @@ pub struct TokenDeposit<'info> {
             mut,
             seeds=[b"nemeos_vault_account", mint.key().as_ref()],
             bump,
-            // TODO only the seller could deposit tokens
             has_one = seller,
     )]
     vault_account: Account<'info, VaultAccount>,

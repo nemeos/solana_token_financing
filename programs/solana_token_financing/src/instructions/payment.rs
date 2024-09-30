@@ -7,7 +7,6 @@ use crate::errors::ErrorCode;
 use crate::states::{loan_account::LoanAccount, vault_account::TokenAccountOwnerPda};
 
 pub fn payment(ctx: Context<Payment>) -> Result<()> {
-    // TODO all payments are identical (same amount of tokens and same amount of SOL)
     let loan_account = &mut ctx.accounts.loan_account;
 
     // Check that it is the right time to repay the loan (and that the loan is not finished)

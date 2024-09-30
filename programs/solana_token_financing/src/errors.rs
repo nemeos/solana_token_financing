@@ -31,4 +31,10 @@ pub enum ErrorCode {
 
     #[msg("The instruction is not from Nemeos.")]
     NemeosInstruction,
+
+    #[msg("Impossible to create the loan (the lot id does not exist).")]
+    LotNotFound,
+
+    #[msg("Impossible to create the loan (the loan id does not exist).")]
+    LoanNotFound,
 }

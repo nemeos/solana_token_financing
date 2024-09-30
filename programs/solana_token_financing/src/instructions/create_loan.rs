@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
-use crate::constants::{NEMEOS_PUBKEY, USDC_PUBKEY};
+use crate::constants::{LOANS, LOTS, NEMEOS_PUBKEY, USDC_PUBKEY};
 use crate::errors::ErrorCode;
 use crate::states::{loan_account::LoanAccount, vault_account::VaultAccount};
 
@@ -10,27 +10,37 @@ const SECONDS_PER_YEAR: u64 = 60 * 60 * 24 * 365;
 
 pub fn create_loan(
     ctx: Context<CreateLoan>,
-    payment_amount: u64,
-    nb_of_tokens_per_payment: u64,
-    nb_payments: u8,
-    period_duration_in_seconds: u64,
+    lot_quantity: u8,
+    lot_id: u8,
+    loan_id: u8,
 ) -> Result<()> {
+    // Check that the lot and the loan exist
+    let lot = LOTS.get(lot_id as usize).ok_or(ErrorCode::LotNotFound)?;
+    let loan = LOANS.get(loan_id as usize).ok_or(ErrorCode::LoanNotFound)?;
+
+    let loan_amount = (lot_quantity as u64) * lot.token_quantity * lot.token_price;
+    let upfront_amount = loan_amount * (loan.upfront as u64) / 100;
+    let payment_amount = (loan_amount - upfront_amount) / (loan.nb_of_payments as u64 - 1);
+    let total_token_quantity =
+        lot.token_quantity * 10u64.pow(ctx.accounts.mint.decimals as u32) * (lot_quantity as u64);
+    let upfront_token_quantity = total_token_quantity * (loan.upfront as u64) / 100;
+    let token_quantity_per_payment =
+        (total_token_quantity - upfront_token_quantity) / (loan.nb_of_payments as u64 - 1);
+
     // Check that there is enough tokens in the token vault for this loan
     let vault_account = &mut ctx.accounts.vault_account;
     vault_account.available_tokens = vault_account
         .available_tokens
-        .checked_sub((nb_payments as u64) * nb_of_tokens_per_payment)
+        .checked_sub(total_token_quantity)
         .ok_or(ErrorCode::Overflow)?;
 
     // Transfer fees from borrower to Nemeos
     // fees_amount = (annual_interest_rate * loan_duration_in_seconds / seconds_per_year)
     //               * loan_amount / 2
-    let loan_amount = (nb_payments as u64) * payment_amount;
-    let loan_duration_in_seconds = (nb_payments as u64) * period_duration_in_seconds;
-    let fees_amount =
-        (vault_account.annual_interest_rate as u64) * loan_duration_in_seconds * loan_amount
-            / (100 * SECONDS_PER_YEAR * 2);
-
+    let loan_duration_in_seconds =
+        loan.period_duration_in_seconds * (loan.nb_of_payments as u64 - 1);
+    let fees_amount = (loan.annual_interest_rate as u64) * loan_duration_in_seconds * loan_amount
+        / (100 * SECONDS_PER_YEAR * 2);
     if ctx.accounts.nemeos_payment_account.mint != USDC_PUBKEY {
         return Err(ErrorCode::WrongCurrency.into());
     }
@@ -46,25 +56,28 @@ pub fn create_loan(
     let cpi_context = CpiContext::new(cpi_program, cpi_accounts);
     token::transfer(cpi_context, fees_amount)?;
 
+    // TODO up_front payment (and transfer of corresponding tokens)
+
     // Create loan account
     let loan_account = &mut ctx.accounts.loan_account;
     loan_account.borrower = ctx.accounts.borrower.key();
     loan_account.seller = ctx.accounts.seller.key();
+    loan_account.lot_id = lot_id;
+    loan_account.loan_id = loan_id;
     loan_account.payment_amount = payment_amount;
-    loan_account.nb_of_tokens_per_payment = nb_of_tokens_per_payment;
-    loan_account.nb_remaining_payments = nb_payments;
-    loan_account.period_duration_in_seconds = period_duration_in_seconds;
+    loan_account.nb_of_tokens_per_payment = token_quantity_per_payment;
+    loan_account.nb_remaining_payments = loan.nb_of_payments - 1;
+    loan_account.period_duration_in_seconds = loan.period_duration_in_seconds;
     let now = Clock::get()?.unix_timestamp as u64;
     loan_account.start_period = now;
     // TODO the first deadline could be shorter
-    loan_account.end_period = now + period_duration_in_seconds;
+    loan_account.end_period = now + loan.period_duration_in_seconds;
 
     Ok(())
 }
 
 #[derive(Accounts)]
 pub struct CreateLoan<'info> {
-    // TODO if the same borrower would like to create a loan for the same token, he should create a new account
     #[account(
             init,
             payer = borrower,

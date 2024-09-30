@@ -65,7 +65,6 @@ pub struct CloseVaultAccounts<'info> {
     vault_account: Account<'info, VaultAccount>,
 
     #[account(mut)]
-    // TODO only the seller could close vault accounts
     seller: Signer<'info>,
     #[account(mut)]
     seller_token_account: Account<'info, TokenAccount>,

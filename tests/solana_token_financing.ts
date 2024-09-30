@@ -11,7 +11,8 @@ import {
 } from '@solana/spl-token';
 import {SolanaTokenFinancing} from "../target/types/solana_token_financing";
 
-const TOKEN_DECIMALS: number = 9;
+const TOKEN_DECIMALS: number = 2;
+const USDC_TOKEN_DECIMALS: number = 6;
 
 const usdcSecretKey = new Uint8Array([
     136, 123, 222, 14, 134, 218, 188, 140, 238, 149, 208, 250, 205, 76, 165, 229,
@@ -127,7 +128,7 @@ describe("solana_token_financing dApp functional testing", () => {
             adminKeypair, // Payer
             adminKeypair.publicKey, // Mint authority
             null, // Freeze authority
-            TOKEN_DECIMALS, // Decimals
+            USDC_TOKEN_DECIMALS, // Decimals
             usdcKeypair,
         );
         const borrowerPaymentAccount = await getOrCreateAssociatedTokenAccount(
@@ -142,7 +143,7 @@ describe("solana_token_financing dApp functional testing", () => {
             usdcMint, // SPL token address
             borrowerPaymentAccount.address, // Destination account
             adminKeypair.publicKey, // Mint authority
-            1_000 * 10 ** TOKEN_DECIMALS // Amount of tokens to mint (1_000 token)
+            1_000 * 10 ** USDC_TOKEN_DECIMALS // Amount of tokens to mint (1_000 USDC)
         );
         const sellerPaymentAccount = await getOrCreateAssociatedTokenAccount(
             connection,
@@ -206,7 +207,7 @@ describe("solana_token_financing dApp functional testing", () => {
         // TEST : deposit_tokens
         console.log(`*** Deposit tokens ***`);
         let txTokenDeposit = await program.methods
-            .tokenDeposit(new BN(100 * 10 ** TOKEN_DECIMALS))
+            .tokenDeposit(new BN(1000 * 10 ** TOKEN_DECIMALS))
             .accounts({
                 seller: sellerKeypair.publicKey,
                 sellerTokenAccount: sellerTokenAccount.address,
@@ -221,7 +222,7 @@ describe("solana_token_financing dApp functional testing", () => {
         // TEST : create_loan
         console.log(`*** Create loan ***`);
         let txCreateLoan = await program.methods
-            .createLoan(new BN(10 * 10 ** TOKEN_DECIMALS), new BN(5 * 10 ** TOKEN_DECIMALS), new BN(2), new BN(3))
+            .createLoan(new BN(2), new BN(0), new BN(2))
             .accounts({
                 seller: sellerKeypair.publicKey,
                 borrower: borrowerKeypair.publicKey,
@@ -326,10 +327,27 @@ describe("solana_token_financing dApp functional testing", () => {
         await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount);
         await print_vault(connection, program, mint);
 
-        // // TEST : payment 3 (SHOULD FAIL)
-        // console.log(`*** Payment 3 ***`);
+        // TEST : payment 3 (SHOULD FAIL)
+        console.log(`*** Payment 3 ***`);
+        await wait(3); // wait 3s
+        let txPayment3 = await program.methods
+            .payment()
+            .accounts({
+                borrower: borrowerKeypair.publicKey,
+                sellerPaymentAccount: sellerPaymentAccount.address,
+                borrowerPaymentAccount: borrowerPaymentAccount.address,
+                mint: mint,
+            })
+            .signers([borrowerKeypair])
+            .rpc();
+        await connection.confirmTransaction(txPayment3);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount);
+        await print_vault(connection, program, mint);
+
+        // // TEST : payment 4 (SHOULD FAIL)
+        // console.log(`*** Payment 4 ***`);
         // await wait(3); // wait 3s
-        // let txPayment3 = await program.methods
+        // let txPayment4 = await program.methods
         //     .payment()
         //     .accounts({
         //         borrower: borrowerKeypair.publicKey,
@@ -339,7 +357,7 @@ describe("solana_token_financing dApp functional testing", () => {
         //     })
         //     .signers([borrowerKeypair])
         //     .rpc();
-        // await connection.confirmTransaction(txPayment3);
+        // await connection.confirmTransaction(txPayment4);
 
         // TEST : close_loan
         console.log(`*** Close loan ***`);

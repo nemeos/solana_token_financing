@@ -26,18 +26,11 @@ pub mod solana_token_financing {
 
     pub fn create_loan(
         ctx: Context<CreateLoan>,
-        payment_amount: u64,
-        nb_of_tokens_per_payment: u64,
-        nb_payments: u8,
-        period_duration_in_seconds: u64,
+        lot_quantity: u8,
+        lot_id: u8,
+        loan_id: u8,
     ) -> Result<()> {
-        instructions::create_loan(
-            ctx,
-            payment_amount,
-            nb_of_tokens_per_payment,
-            nb_payments,
-            period_duration_in_seconds,
-        )
+        instructions::create_loan(ctx, lot_quantity, lot_id, loan_id)
     }
 
     pub fn payment(ctx: Context<Payment>) -> Result<()> {
