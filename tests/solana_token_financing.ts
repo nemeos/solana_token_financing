@@ -17,13 +17,15 @@ const TOKEN_DECIMALS: number = 2;
 const USDC_TOKEN_DECIMALS: number = 6;
 
 const NEMEOS_PUBKEY = new PublicKey("9WnKTizjgyntHrGUuZScLt4hWjqmqmNHzpxQxpsTDvLV");
-
-const usdcKeypair = get_keypair_from_json_file("../accounts/usdc.json");
 const nemeosKeypair = get_keypair_from_json_file("../accounts/nemeos.json");
+
+const USDC_PUBKEY = new PublicKey("6zoLyaNoXjBGg68feJv1NKWTacdD6miQsHwzLtue6TfS");
+const usdcKeypair = get_keypair_from_json_file("../accounts/usdc.json");
 
 const adminKeypair = get_keypair_from_json_file("../accounts/admin.json");
 const sellerKeypair = get_keypair_from_json_file("../accounts/seller.json");
 const borrowerKeypair = get_keypair_from_json_file("../accounts/borrower.json");
+const mintKeypair = get_keypair_from_json_file("../accounts/mint.json");
 
 function wait(seconds: number): Promise<void> {
     return new Promise(resolve => {
@@ -174,8 +176,9 @@ describe("solana_token_financing dApp functional testing", () => {
             adminKeypair.publicKey, // Mint authority
             null, // Freeze authority
             TOKEN_DECIMALS, // Decimals
+            mintKeypair,
         );
-        // console.log('Mint address:', mint.toBase58());
+        console.log('Mint address:', mint.toBase58());
 
         // Create an associated token account for the seller
         const sellerTokenAccount = await getOrCreateAssociatedTokenAccount(
@@ -184,7 +187,7 @@ describe("solana_token_financing dApp functional testing", () => {
             mint, // SPL token address
             sellerKeypair.publicKey // Owner of the token account
         );
-        // console.log('Seller token account:', sellerTokenAccount.address.toBase58());
+        console.log('Seller token account:', sellerTokenAccount.address.toBase58());
 
         // Mint tokens to the seller's token account
         await mintTo(
