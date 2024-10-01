@@ -22,10 +22,14 @@ anchor build
 
 ## Run tests
 
-You need a Solana account to run the tests. If you don't have one already, create one:
+You need Solana accounts to run the tests. If you don't have them already, create them:
 
 ```bash
-solana-keygen new --outfile accounts/id.json
+solana-keygen new --outfile accounts/nemeos.json
+solana-keygen new --outfile accounts/usdc.json
+solana-keygen new --outfile accounts/admin.json
+solana-keygen new --outfile accounts/seller.json
+solana-keygen new --outfile accounts/borrower.json
 ```
 
 Then run the tests:

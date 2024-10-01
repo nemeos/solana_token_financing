@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import * as anchor from "@coral-xyz/anchor";
 import {Program} from "@coral-xyz/anchor";
 import {Connection, Keypair, PublicKey, LAMPORTS_PER_SOL} from '@solana/web3.js';
@@ -16,16 +18,12 @@ const USDC_TOKEN_DECIMALS: number = 6;
 
 const NEMEOS_PUBKEY = new PublicKey("9WnKTizjgyntHrGUuZScLt4hWjqmqmNHzpxQxpsTDvLV");
 
-const usdcSecretKey = new Uint8Array([
-    136, 123, 222, 14, 134, 218, 188, 140, 238, 149, 208, 250, 205, 76, 165, 229,
-    208, 81, 61, 48, 92, 78, 100, 116, 240, 169, 177, 29, 175, 38, 77, 216, 89,
-    24, 241, 73, 229, 179, 188, 231, 249, 4, 104, 73, 208, 231, 223, 235, 150,
-    243, 138, 134, 203, 162, 11, 66, 175, 217, 219, 38, 5, 106, 164, 53
-]);
-const usdcKeypair = Keypair.fromSecretKey(usdcSecretKey);
+const usdcKeypair = get_keypair_from_json_file("../accounts/usdc.json");
+const nemeosKeypair = get_keypair_from_json_file("../accounts/nemeos.json");
 
-const nemeosSecretKey = new Uint8Array([218, 148, 167, 119, 201, 37, 97, 57, 66, 144, 30, 136, 77, 164, 144, 110, 11, 160, 213, 58, 108, 194, 97, 221, 163, 254, 90, 210, 139, 172, 80, 200, 126, 126, 148, 150, 215, 210, 102, 25, 54, 38, 163, 50, 149, 195, 78, 33, 157, 3, 67, 149, 70, 58, 100, 128, 244, 54, 5, 15, 195, 105, 251, 222]);
-const nemeosKeypair = Keypair.fromSecretKey(nemeosSecretKey);
+const adminKeypair = get_keypair_from_json_file("../accounts/admin.json");
+const sellerKeypair = get_keypair_from_json_file("../accounts/seller.json");
+const borrowerKeypair = get_keypair_from_json_file("../accounts/borrower.json");
 
 function wait(seconds: number): Promise<void> {
     return new Promise(resolve => {
@@ -33,6 +31,12 @@ function wait(seconds: number): Promise<void> {
             resolve();
         }, seconds * 1000);
     });
+}
+
+function get_keypair_from_json_file(file_path: string): Keypair {
+    const privateKeyJson = JSON.parse(fs.readFileSync(path.resolve(__dirname, file_path), 'utf-8'));
+    const secretKey = new Uint8Array(privateKeyJson);
+    return Keypair.fromSecretKey(secretKey);
 }
 
 async function print_users_accounts(
@@ -96,12 +100,15 @@ describe("solana_token_financing dApp functional testing", () => {
     it("Full workflow", async () => {
         console.log(`*** Initialize accounts and create a SPL token ***`);
         // Create keypairs
-        const adminKeypair = Keypair.generate();
+        // const adminKeypair = Keypair.generate();
         // Create keypairs
-        const sellerKeypair = Keypair.generate();
-        // console.log('Seller address:', sellerKeypair.publicKey.toBase58());
-        const borrowerKeypair = Keypair.generate();
-        // console.log('Borrower address:', borrowerKeypair.publicKey.toBase58());
+        // const sellerKeypair = Keypair.generate();
+        // const borrowerKeypair = Keypair.generate();
+        console.log('Nemeos address:', nemeosKeypair.publicKey.toBase58());
+        console.log('USDC address:', usdcKeypair.publicKey.toBase58());
+        console.log('Admin address:', adminKeypair.publicKey.toBase58());
+        console.log('Seller address:', sellerKeypair.publicKey.toBase58());
+        console.log('Borrower address:', borrowerKeypair.publicKey.toBase58());
 
         // Create accounts with airdrops
         let txAdminAirdrop = await connection.requestAirdrop(
