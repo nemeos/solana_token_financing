@@ -6,13 +6,15 @@ import {
     createMint,
     getOrCreateAssociatedTokenAccount,
     mintTo,
-    getAccount,
-    transfer,
+    TOKEN_PROGRAM_ID,
+    getAssociatedTokenAddress
 } from '@solana/spl-token';
 import {SolanaTokenFinancing} from "../target/types/solana_token_financing";
 
 const TOKEN_DECIMALS: number = 2;
 const USDC_TOKEN_DECIMALS: number = 6;
+
+const NEMEOS_PUBKEY = new PublicKey("9WnKTizjgyntHrGUuZScLt4hWjqmqmNHzpxQxpsTDvLV");
 
 const usdcSecretKey = new Uint8Array([
     136, 123, 222, 14, 134, 218, 188, 140, 238, 149, 208, 250, 205, 76, 165, 229,
@@ -219,13 +221,32 @@ describe("solana_token_financing dApp functional testing", () => {
         await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address);
         await print_vault(connection, program, mint);
 
+        // Retrieve payment addresses
+        const nemeosUsdcAccount = await getAssociatedTokenAddress(
+            usdcMint,
+            NEMEOS_PUBKEY,
+            false, // Do not create the token account if it does not exist
+            TOKEN_PROGRAM_ID
+        );
+        let [vaultAccount] = PublicKey.findProgramAddressSync(
+            [Buffer.from("nemeos_vault_account"), mint.toBuffer()],
+            program.programId
+        );
+        const vaultAccountInfo = await program.account.vaultAccount.fetch(vaultAccount);
+        const sellerUsdcAccount = await getAssociatedTokenAddress(
+            usdcMint,
+            vaultAccountInfo.seller,
+            false, // Do not create the token account if it does not exist
+            TOKEN_PROGRAM_ID
+        );
+
         // TEST : create_loan
         console.log(`*** Create loan ***`);
         let txCreateLoan = await program.methods
             .createLoan(new BN(2), new BN(0), new BN(2))
             .accounts({
                 borrower: borrowerKeypair.publicKey,
-                nemeosPaymentAccount: nemeosPaymentAccount.address,
+                nemeosPaymentAccount: nemeosUsdcAccount,
                 borrowerPaymentAccount: borrowerPaymentAccount.address,
                 mint: mint,
             })
@@ -241,7 +262,7 @@ describe("solana_token_financing dApp functional testing", () => {
             .upfrontPayment()
             .accounts({
                 borrower: borrowerKeypair.publicKey,
-                sellerPaymentAccount: sellerPaymentAccount.address,
+                sellerPaymentAccount: sellerUsdcAccount,
                 borrowerPaymentAccount: borrowerPaymentAccount.address,
                 mint: mint,
             })
