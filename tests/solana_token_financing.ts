@@ -224,13 +224,12 @@ describe("solana_token_financing dApp functional testing", () => {
         let txCreateLoan = await program.methods
             .createLoan(new BN(2), new BN(0), new BN(2))
             .accounts({
-                seller: sellerKeypair.publicKey,
                 borrower: borrowerKeypair.publicKey,
                 nemeosPaymentAccount: nemeosPaymentAccount.address,
                 borrowerPaymentAccount: borrowerPaymentAccount.address,
                 mint: mint,
             })
-            .signers([borrowerKeypair, sellerKeypair])
+            .signers([borrowerKeypair])
             .rpc();
         await connection.confirmTransaction(txCreateLoan);
         await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address);

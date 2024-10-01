@@ -61,7 +61,7 @@ pub fn create_loan(
     // Create loan account
     let loan_account = &mut ctx.accounts.loan_account;
     loan_account.borrower = ctx.accounts.borrower.key();
-    loan_account.seller = ctx.accounts.seller.key();
+    loan_account.seller = ctx.accounts.vault_account.seller;
     loan_account.lot_id = lot_id;
     loan_account.loan_id = loan_id;
     loan_account.payment_amount = payment_amount;
@@ -90,8 +90,6 @@ pub struct CreateLoan<'info> {
     loan_account: Account<'info, LoanAccount>,
 
     #[account(mut)]
-    seller: Signer<'info>,
-    #[account(mut)]
     borrower: Signer<'info>,
     #[account(mut)]
     nemeos_payment_account: Account<'info, TokenAccount>,
@@ -102,7 +100,6 @@ pub struct CreateLoan<'info> {
             mut,
             seeds=[b"nemeos_vault_account", mint.key().as_ref()],
             bump,
-            has_one = seller,
     )]
     vault_account: Account<'info, VaultAccount>,
 
