@@ -394,6 +394,10 @@ describe("solana_token_financing dApp functional testing", () => {
         await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount);
         await print_vault(connection, program, mint);
 
+        // Wait 24 hours on purpose to keep the cluster running for frontend development on https://localhost:8899
+        // console.log(`*** Waiting 24 hours ***`);
+        // await wait(24 * 60 * 60);
+
         // // TEST : payment 4 (SHOULD FAIL)
         // console.log(`*** Payment 4 ***`);
         // await wait(3); // wait 3s

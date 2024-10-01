@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useConnection } from '@solana/wallet-adapter-react'
-import { program, counterPDA, CounterData } from '@/anchor/setup'
+import { program, counterPDA, CounterData } from '../anchor/setup'
 
 export default function CounterState() {
   const { connection } = useConnection()

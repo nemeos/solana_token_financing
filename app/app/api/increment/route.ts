@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { PublicKey, Transaction } from '@solana/web3.js'
 import { TOKEN_2022_PROGRAM_ID, getAssociatedTokenAddressSync } from '@solana/spl-token'
-import { program, mintPDA } from '@/anchor/setup'
+import { program, mintPDA } from '../../../anchor/setup'
 
 export async function GET(): Promise<Response> {
   return NextResponse.json(

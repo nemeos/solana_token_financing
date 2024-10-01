@@ -1,6 +1,6 @@
-import CounterState from '@/components/counter-state'
-import IncrementButton from '@/components/increment-button'
-import SolanaPay from '@/components/solana-pay'
+import CounterState from '../components/counter-state'
+import IncrementButton from '../components/increment-button'
+import SolanaPay from '../components/solana-pay'
 
 export default function Home() {
   return (

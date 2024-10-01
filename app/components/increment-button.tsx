@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { TOKEN_2022_PROGRAM_ID, getAssociatedTokenAddressSync } from '@solana/spl-token'
-import { program, mintPDA } from '@/anchor/setup'
+import { program, mintPDA } from '../anchor/setup'
 import { Button } from '@nextui-org/react'
 import toast, { Toaster } from 'react-hot-toast'
 
