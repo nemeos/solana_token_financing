@@ -27,6 +27,9 @@ const sellerKeypair = get_keypair_from_json_file("../accounts/seller.json");
 const borrowerKeypair = get_keypair_from_json_file("../accounts/borrower.json");
 const mintKeypair = get_keypair_from_json_file("../accounts/mint.json");
 
+// Phantom wallet manual test, passphrase is `claw blame sorry warrior true uphold hurt smooth express leopard hope fiction`
+const phantomWalletManualTestPubkey = new PublicKey("53oGZxiUoxCBn1JK3tzhFE9Mf29Ci9BVYEtwtHFZDiTn");
+
 function wait(seconds: number): Promise<void> {
     return new Promise(resolve => {
         setTimeout(() => {
@@ -50,20 +53,24 @@ async function print_users_accounts(
     sellerTokenAccount: anchor.web3.PublicKey,
     borrowerAccount: anchor.web3.PublicKey,
     borrowerPaymentAccount: anchor.web3.PublicKey,
-    borrowerTokenAccount?: anchor.web3.PublicKey,
+    borrowerTokenAccount: anchor.web3.PublicKey | undefined,
+    phantomWalletManualTestPubkey: anchor.web3.PublicKey,
+    phantomWalletManualTestUsdcAccount: anchor.web3.PublicKey,
+    getPhantomWalletManualTestTokenAccount: () => Promise<anchor.web3.PublicKey | null> = () => Promise.resolve(null)
 ): Promise<void> {
+    console.log('\n=========== User accounts ===========');
     const nemeosSol = await connection.getBalance(nemeosAccount);
     const nemeosPaymentInfo = await connection.getTokenAccountBalance(nemeosPaymentAccount);
     const nemeosPaymentAmount = nemeosPaymentInfo.value.uiAmount;
     console.log(`Nemeos: ${nemeosSol / anchor.web3.LAMPORTS_PER_SOL} SOL, ${nemeosPaymentAmount} USDC`);
-
+    
     const sellerSol = await connection.getBalance(sellerAccount);
     const sellerPaymentInfo = await connection.getTokenAccountBalance(sellerPaymentAccount);
     const sellerPaymentAmount = sellerPaymentInfo.value.uiAmount;
     const sellerTokenInfo = await connection.getTokenAccountBalance(sellerTokenAccount);
     const sellerTokens = sellerTokenInfo.value.uiAmount;
     console.log(`Seller: ${sellerSol / anchor.web3.LAMPORTS_PER_SOL} SOL, ${sellerPaymentAmount} USDC, ${sellerTokens} tokens`);
-
+    
     const borrowerSol = await connection.getBalance(borrowerAccount);
     const borrowerPaymentInfo = await connection.getTokenAccountBalance(borrowerPaymentAccount);
     const borrowerPaymentAmount = borrowerPaymentInfo.value.uiAmount;
@@ -74,22 +81,38 @@ async function print_users_accounts(
     } else {
         console.log(`Borrower: ${borrowerSol / anchor.web3.LAMPORTS_PER_SOL} SOL, ${borrowerPaymentAmount} USDC`);
     }
+    
+    const phantomWalletManualTestSol = await connection.getBalance(phantomWalletManualTestPubkey);
+    const phantomWalletManualTestUsdcInfo = await connection.getTokenAccountBalance(phantomWalletManualTestUsdcAccount);
+    const phantomWalletManualTestUsdcAmount = phantomWalletManualTestUsdcInfo.value.uiAmount;
+    let phantomWalletManualTestTokenAccount = await getPhantomWalletManualTestTokenAccount();
+    if (phantomWalletManualTestTokenAccount) {
+        const phantomWalletManualTestTokenInfo = await connection.getTokenAccountBalance(phantomWalletManualTestTokenAccount)
+            .catch(() => null);
+        const phantomWalletManualTestTokens = !!phantomWalletManualTestTokenInfo ? phantomWalletManualTestTokenInfo.value.uiAmount : '[Not Created Account]';
+        console.log(`Phantom wallet manual test: ${phantomWalletManualTestSol / anchor.web3.LAMPORTS_PER_SOL} SOL, ${phantomWalletManualTestUsdcAmount} USDC, ${phantomWalletManualTestTokens} tokens`);
+    } else {
+        console.log(`Phantom wallet manual test: ${phantomWalletManualTestSol / anchor.web3.LAMPORTS_PER_SOL} SOL, ${phantomWalletManualTestUsdcAmount} USDC`);
+    }
+    console.log('=====================================\n');
 }
 
 async function print_vault(connection: anchor.web3.Connection, program: Program<SolanaTokenFinancing>, mint: anchor.web3.PublicKey): Promise<void> {
+    console.log('\n=========== Vault ===========');
     const [vaultTokenAccount, _bumpVaultTokenAccountAddr] = await PublicKey.findProgramAddress(
         [Buffer.from("nemeos_vault_token_account"), mint.toBuffer()],
         program.programId
     );
     const vaultTokenInfo = await connection.getTokenAccountBalance(vaultTokenAccount);
     const vaultTokens = vaultTokenInfo.value.uiAmount;
-
+    
     const [vaultAccountAddr, _bumpVaultAccountAddr] = await PublicKey.findProgramAddress(
         [Buffer.from("nemeos_vault_account"), mint.toBuffer()],
         program.programId
     );
     const vaultAccount = await program.account.vaultAccount.fetch(vaultAccountAddr);
     console.log(`Vault: ${vaultTokens} tokens including ${vaultAccount.availableTokens / 10 ** TOKEN_DECIMALS} available`);
+    console.log('=============================\n');
 }
 
 describe("solana_token_financing dApp functional testing", () => {
@@ -111,17 +134,24 @@ describe("solana_token_financing dApp functional testing", () => {
         console.log('Admin address:', adminKeypair.publicKey.toBase58());
         console.log('Seller address:', sellerKeypair.publicKey.toBase58());
         console.log('Borrower address:', borrowerKeypair.publicKey.toBase58());
+        console.log('Borrower Phantom address:', phantomWalletManualTestPubkey.toBase58());
 
         // Create accounts with airdrops
         let txAdminAirdrop = await connection.requestAirdrop(
             adminKeypair.publicKey,
             5 * LAMPORTS_PER_SOL
         );
+        await connection.confirmTransaction(txAdminAirdrop);
         let txSellerAirdrop = await connection.requestAirdrop(
             sellerKeypair.publicKey,
             5 * LAMPORTS_PER_SOL
         );
         await connection.confirmTransaction(txSellerAirdrop);
+        let txPhantomWalletManualTestSolAirdrop = await connection.requestAirdrop(
+            phantomWalletManualTestPubkey,
+            5 * LAMPORTS_PER_SOL
+        );
+        await connection.confirmTransaction(txPhantomWalletManualTestSolAirdrop);
         let txNemeosAirdrop = await connection.requestAirdrop(
             nemeosKeypair.publicKey,
             5 * LAMPORTS_PER_SOL
@@ -142,17 +172,34 @@ describe("solana_token_financing dApp functional testing", () => {
             USDC_TOKEN_DECIMALS, // Decimals
             usdcKeypair,
         );
+        console.log('USDC Mint address:', usdcMint.toBase58());
         const borrowerPaymentAccount = await getOrCreateAssociatedTokenAccount(
             connection,
             adminKeypair, // Payer
             usdcMint, // SPL token address
             borrowerKeypair.publicKey // Owner of the token account
         );
-        await mintTo(
+        const phantomWalletManualTestUsdcAccount = await getOrCreateAssociatedTokenAccount(
+            connection,
+            adminKeypair, // Payer
+            usdcMint, // SPL token address
+            phantomWalletManualTestPubkey // Owner of the token account
+        );
+        console.log('Borrower payment account:', borrowerPaymentAccount.address.toBase58());
+        console.log('Phantom wallet manual test USDC account:', phantomWalletManualTestUsdcAccount.address.toBase58());
+        await mintTo( // Send USDC to borrower
             connection,
             adminKeypair, // Payer
             usdcMint, // SPL token address
             borrowerPaymentAccount.address, // Destination account
+            adminKeypair.publicKey, // Mint authority
+            1_000 * 10 ** USDC_TOKEN_DECIMALS // Amount of tokens to mint (1_000 USDC)
+        );
+        await mintTo( // Send USDC to borrower 2 (for manual test in Phantom extension wallet)
+            connection,
+            adminKeypair, // Payer
+            usdcMint, // SPL token address
+            phantomWalletManualTestUsdcAccount.address, // Destination account
             adminKeypair.publicKey, // Mint authority
             1_000 * 10 ** USDC_TOKEN_DECIMALS // Amount of tokens to mint (1_000 USDC)
         );
@@ -169,7 +216,7 @@ describe("solana_token_financing dApp functional testing", () => {
             nemeosKeypair.publicKey // Owner of the token account
         );
 
-        // Create a SPL token
+        // Create a SPL token (token from partner ICO that we wish to purchase)
         const mint = await createMint(
             connection,
             adminKeypair, // Payer
@@ -199,7 +246,7 @@ describe("solana_token_financing dApp functional testing", () => {
             1_000 * 10 ** TOKEN_DECIMALS // Amount of tokens to mint (1_000 token)
         );
 
-        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, undefined, phantomWalletManualTestPubkey, phantomWalletManualTestUsdcAccount.address);
 
         // TEST : initialize_token_vault
         console.log(`*** Initialize token vault ***`);
@@ -213,7 +260,7 @@ describe("solana_token_financing dApp functional testing", () => {
             .signers([nemeosKeypair])
             .rpc();
         await connection.confirmTransaction(txInitVault);
-        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, undefined, phantomWalletManualTestPubkey, phantomWalletManualTestUsdcAccount.address);
         await print_vault(connection, program, mint);
 
         // TEST : deposit_tokens
@@ -228,7 +275,7 @@ describe("solana_token_financing dApp functional testing", () => {
             .signers([sellerKeypair])
             .rpc();
         await connection.confirmTransaction(txTokenDeposit);
-        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, undefined, phantomWalletManualTestPubkey, phantomWalletManualTestUsdcAccount.address);
         await print_vault(connection, program, mint);
 
         // Retrieve payment addresses
@@ -252,6 +299,12 @@ describe("solana_token_financing dApp functional testing", () => {
 
         // TEST : create_loan
         console.log(`*** Create loan ***`);
+        console.log({
+            borrower: borrowerKeypair.publicKey,
+            nemeosPaymentAccount: nemeosUsdcAccount,
+            borrowerPaymentAccount: borrowerPaymentAccount.address,
+            mint: mint,
+        })
         let txCreateLoan = await program.methods
             .createLoan(new BN(2), new BN(0), new BN(2))
             .accounts({
@@ -263,7 +316,7 @@ describe("solana_token_financing dApp functional testing", () => {
             .signers([borrowerKeypair])
             .rpc();
         await connection.confirmTransaction(txCreateLoan);
-        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, undefined, phantomWalletManualTestPubkey, phantomWalletManualTestUsdcAccount.address);
         await print_vault(connection, program, mint);
 
         // TEST : upfront payment
@@ -283,7 +336,19 @@ describe("solana_token_financing dApp functional testing", () => {
             [Buffer.from("nemeos_borrower_token_account"), mint.toBuffer(), borrowerKeypair.publicKey.toBuffer()],
             program.programId
         );
-        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount);
+        const getPhantomWalletManualTestTokenAccount:() => Promise<anchor.web3.PublicKey | null> = async () => {
+            try {
+                let result = await PublicKey.findProgramAddress(
+                    [Buffer.from("nemeos_borrower_token_account"), mint.toBuffer(), phantomWalletManualTestPubkey.toBuffer()],
+                    program.programId
+                );
+                const phantomWalletManualTestTokenAccount = result[0]
+                return phantomWalletManualTestTokenAccount;
+            } catch (error) {
+                return null
+            }
+        }
+        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount, phantomWalletManualTestPubkey, phantomWalletManualTestUsdcAccount.address, getPhantomWalletManualTestTokenAccount);
         await print_vault(connection, program, mint);
 
         // // TEST : full early repayment
@@ -325,7 +390,7 @@ describe("solana_token_financing dApp functional testing", () => {
         //     [Buffer.from("nemeos_borrower_token_account"), mint.toBuffer(), borrowerKeypair.publicKey.toBuffer()],
         //     program.programId
         // );
-        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount, phantomWalletManualTestPubkey, phantomWalletManualTestUsdcAccount.address, getPhantomWalletManualTestTokenAccount);
         await print_vault(connection, program, mint);
 
         // // TEST : close_loan after payment 1
@@ -340,7 +405,7 @@ describe("solana_token_financing dApp functional testing", () => {
         //     .signers([])
         //     .rpc();
         // await connection.confirmTransaction(txCloseLoanEarlier);
-        // await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount, phantomWalletManualTestPubkey, phantomWalletManualTestUsdcAccount.address, getPhantomWalletManualTestTokenAccount);
         // await print_vault(connection, program, mint);
 
         // // TEST : full early repayment
@@ -357,7 +422,7 @@ describe("solana_token_financing dApp functional testing", () => {
         //     .signers([borrowerKeypair])
         //     .rpc();
         // await connection.confirmTransaction(txFullEarlyRepayment);
-        // await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount, phantomWalletManualTestPubkey, phantomWalletManualTestUsdcAccount.address, getPhantomWalletManualTestTokenAccount);
         // await print_vault(connection, program, mint);
 
         // TEST : payment 2
@@ -374,7 +439,7 @@ describe("solana_token_financing dApp functional testing", () => {
             .signers([borrowerKeypair])
             .rpc();
         await connection.confirmTransaction(txPayment2);
-        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount, phantomWalletManualTestPubkey, phantomWalletManualTestUsdcAccount.address, getPhantomWalletManualTestTokenAccount);
         await print_vault(connection, program, mint);
 
         // TEST : payment 3 (SHOULD FAIL)
@@ -391,11 +456,17 @@ describe("solana_token_financing dApp functional testing", () => {
             .signers([borrowerKeypair])
             .rpc();
         await connection.confirmTransaction(txPayment3);
-        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount, phantomWalletManualTestPubkey, phantomWalletManualTestUsdcAccount.address, getPhantomWalletManualTestTokenAccount);
         await print_vault(connection, program, mint);
 
         // Wait 24 hours on purpose to keep the cluster running for frontend development on https://localhost:8899
-        // console.log(`*** Waiting 24 hours ***`);
+        // console.log(`*** Waiting 24 hours (keeping cluster open) ***`);
+        // const logState = async () => {
+        //     await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount, phantomWalletManualTestPubkey, phantomWalletManualTestUsdcAccount.address, getPhantomWalletManualTestTokenAccount);
+        //     await print_vault(connection, program, mint);
+        // }
+        // logState();
+        // setInterval(logState, 15_000)
         // await wait(24 * 60 * 60);
 
         // // TEST : payment 4 (SHOULD FAIL)
@@ -424,7 +495,7 @@ describe("solana_token_financing dApp functional testing", () => {
             .signers([])
             .rpc();
         await connection.confirmTransaction(txCloseLoan);
-        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount, phantomWalletManualTestPubkey, phantomWalletManualTestUsdcAccount.address, getPhantomWalletManualTestTokenAccount);
         await print_vault(connection, program, mint);
 
         // TEST : token_withdraw
@@ -439,7 +510,7 @@ describe("solana_token_financing dApp functional testing", () => {
             .signers([sellerKeypair])
             .rpc();
         await connection.confirmTransaction(txTokenWithdraw);
-        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount, phantomWalletManualTestPubkey, phantomWalletManualTestUsdcAccount.address, getPhantomWalletManualTestTokenAccount);
         await print_vault(connection, program, mint);
 
         // TEST : close_loan
@@ -454,6 +525,6 @@ describe("solana_token_financing dApp functional testing", () => {
             .signers([sellerKeypair])
             .rpc();
         await connection.confirmTransaction(txCloseVaultAccounts);
-        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount);
+        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount, phantomWalletManualTestPubkey, phantomWalletManualTestUsdcAccount.address, getPhantomWalletManualTestTokenAccount);
     });
 });
