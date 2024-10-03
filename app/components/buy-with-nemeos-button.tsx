@@ -2,19 +2,10 @@
 
 import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
-import {
-  program2,
-  MINT_PUBKEY,
-  connection2,
-  configureAndSendTransaction,
-  getUserTokenAccountOrGetCreationTransactionInstruction,
-  getNemeosUsdcAccount,
-  USDC_PUBKEY,
-} from '../anchor/setup'
 import { Button } from '@nextui-org/react'
 import toast, { Toaster } from 'react-hot-toast'
-import { BN } from 'bn.js'
-import { Transaction, TransactionInstruction } from '@solana/web3.js'
+import { connection2, MINT_PUBKEY } from '../anchor/setup'
+import { createLoan } from '../anchor/solanaProgramLib'
 
 export default function BuyWithNemeosButton() {
   const { publicKey, signTransaction } = useWallet()
@@ -28,42 +19,7 @@ export default function BuyWithNemeosButton() {
     setIsLoading(true)
 
     try {
-      const borrowerUsdcPaymentAccountResult = await getUserTokenAccountOrGetCreationTransactionInstruction(
-        publicKey,
-        USDC_PUBKEY,
-        connection
-      )
-      if (!borrowerUsdcPaymentAccountResult.alreadyExists) {
-        await configureAndSendTransaction(
-          new Transaction().add(borrowerUsdcPaymentAccountResult.createAssociatedTokenAccountInstruction!),
-          connection,
-          publicKey,
-          signTransaction
-        )
-      }
-
-      const borrowerUsdcPaymentAccount = borrowerUsdcPaymentAccountResult.associatedTokenAddress
-      const nemeosUsdcAccount = await getNemeosUsdcAccount()
-
-      console.log(`*** Create loan ***`)
-      console.log({
-        borrower: publicKey,
-        nemeosPaymentAccount: nemeosUsdcAccount,
-        borrowerPaymentAccount: borrowerUsdcPaymentAccount,
-        mint: MINT_PUBKEY,
-      })
-      const transaction = new Transaction().add(
-        await program2.methods
-          .createLoan(new BN(2), new BN(0), new BN(2))
-          .accounts({
-            borrower: publicKey,
-            nemeosPaymentAccount: nemeosUsdcAccount,
-            borrowerPaymentAccount: borrowerUsdcPaymentAccount,
-            mint: MINT_PUBKEY,
-          })
-          .instruction()
-      )
-      const transactionSignature = await configureAndSendTransaction(transaction, connection, publicKey, signTransaction)
+      const transactionSignature = await createLoan(publicKey, MINT_PUBKEY, connection, signTransaction)
       console.log('transactionSignature', transactionSignature)
 
       toast.success(

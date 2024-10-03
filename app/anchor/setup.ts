@@ -43,22 +43,6 @@ export const NEMEOS_PUBKEY = new PublicKey('9WnKTizjgyntHrGUuZScLt4hWjqmqmNHzpxQ
 export const USDC_PUBKEY = new PublicKey('6zoLyaNoXjBGg68feJv1NKWTacdD6miQsHwzLtue6TfS')
 export const MINT_PUBKEY = new PublicKey('3KXubyatkczxdM7CkWPUcYfHmXYpG5CYEdnfbUWMaEMM')
 
-let [vaultAccount] = PublicKey.findProgramAddressSync([Buffer.from('nemeos_vault_account'), MINT_PUBKEY.toBuffer()], program2.programId)
-
-// Check we can fetch the account from Solana program
-program2.account.vaultAccount.fetch(vaultAccount).then(data => {
-  console.log('vaultAccount', data)
-})
-
-export function getNemeosUsdcAccount() {
-  return getAssociatedTokenAddress(
-    USDC_PUBKEY,
-    NEMEOS_PUBKEY,
-    false, // Do not create the token account if it does not exist
-    TOKEN_PROGRAM_ID
-  )
-}
-
 export async function configureAndSendTransaction(
   transaction: Transaction,
   connection: Connection,
@@ -122,3 +106,19 @@ export async function getUserTokenAccountOrGetCreationTransactionInstruction(
     throw error
   }
 }
+
+export function getNemeosUsdcAccount() {
+  return getAssociatedTokenAddress(
+    USDC_PUBKEY,
+    NEMEOS_PUBKEY,
+    false, // Do not create the token account if it does not exist
+    TOKEN_PROGRAM_ID
+  )
+}
+
+let [vaultAccount] = PublicKey.findProgramAddressSync([Buffer.from('nemeos_vault_account'), MINT_PUBKEY.toBuffer()], program2.programId)
+
+// Check we can fetch the account from Solana program
+program2.account.vaultAccount.fetch(vaultAccount).then(data => {
+  console.log('vaultAccount', data)
+})
