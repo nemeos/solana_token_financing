@@ -13,11 +13,8 @@ declare_id!("5HfozzNSUjtouPPAUJrqPgC4wnwsqg7akvVstjY11Vec");
 pub mod solana_token_financing {
     use super::*;
 
-    pub fn initialize_token_vault(
-        ctx: Context<InitializeTokenAccount>,
-        annual_interest_rate: u8,
-    ) -> Result<()> {
-        instructions::initialize_token_vault(ctx, annual_interest_rate)
+    pub fn initialize_token_vault(ctx: Context<InitializeTokenAccount>) -> Result<()> {
+        instructions::initialize_token_vault(ctx)
     }
 
     pub fn token_deposit(ctx: Context<TokenDeposit>, amount: u64) -> Result<()> {

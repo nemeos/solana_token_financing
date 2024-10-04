@@ -251,7 +251,7 @@ describe("solana_token_financing dApp functional testing", () => {
         // TEST : initialize_token_vault
         console.log(`*** Initialize token vault ***`);
         let txInitVault = await program.methods
-            .initializeTokenVault(new BN(3))
+            .initializeTokenVault()
             .accounts({
                 mint: mint,
                 seller: sellerKeypair.publicKey,
@@ -318,6 +318,15 @@ describe("solana_token_financing dApp functional testing", () => {
         await connection.confirmTransaction(txCreateLoan);
         await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, undefined, phantomWalletManualTestPubkey, phantomWalletManualTestUsdcAccount.address);
         await print_vault(connection, program, mint);
+
+        let [loanAccount] = PublicKey.findProgramAddressSync(
+            [Buffer.from("nemeos_loan_account"), mint.toBuffer(), borrowerKeypair.publicKey.toBuffer()],
+            program.programId
+        );
+        const loanAccountInfo = await program.account.loanAccount.fetch(loanAccount);
+        const deadline = new Date(loanAccountInfo.endPeriod * 1000);
+        console.log(`Next payment: ${loanAccountInfo.paymentAmount / 10 ** USDC_TOKEN_DECIMALS} USDC before ${deadline.toISOString()}`);
+
 
         // TEST : upfront payment
         console.log(`*** Upfront payment ***`);
