@@ -61,9 +61,9 @@ export async function fetchWalletBalances(publicKey: PublicKey, connection: Conn
     balanceSol,
     balanceSolDisplayString: balanceSol / LAMPORTS_PER_SOL,
     balanceAmountUsdc,
-    balanceUsdcDisplayString: (balanceAmountUsdc?.uiAmount || 0) / 10 ** USDC_TOKEN_DECIMALS,
+    balanceUsdcDisplayString: balanceAmountUsdc?.uiAmount || 0,
     balanceAmountMintToken,
-    balanceMintTokenDisplayString: (balanceAmountMintToken?.uiAmount || 0) / 10 ** MINT_TOKEN_DECIMALS,
+    balanceMintTokenDisplayString: balanceAmountMintToken?.uiAmount || 0,
   }
   console.log(
     `Balances of wallet: ` +
