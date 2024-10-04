@@ -32,34 +32,41 @@ export const program2 = new Program(idl2 as SolanaTokenFinancing, {
   connection: connection2,
 })
 
-export type TokenAccountOwnerPdaData = IdlAccounts<SolanaTokenFinancing>['tokenAccountOwnerPda']
-export type VaultAccountData = IdlAccounts<SolanaTokenFinancing>['vaultAccount']
-export type LoanAccountData = IdlAccounts<SolanaTokenFinancing>['loanAccount']
-
+export const MINT_TOKEN_DECIMALS: number = 2
 export const USDC_TOKEN_DECIMALS: number = 6
-export const TOKEN_DECIMALS: number = 2
 
 export const NEMEOS_PUBKEY = new PublicKey('9WnKTizjgyntHrGUuZScLt4hWjqmqmNHzpxQxpsTDvLV')
 export const USDC_PUBKEY = new PublicKey('6zoLyaNoXjBGg68feJv1NKWTacdD6miQsHwzLtue6TfS')
 export const MINT_PUBKEY = new PublicKey('3KXubyatkczxdM7CkWPUcYfHmXYpG5CYEdnfbUWMaEMM')
 
-export async function configureAndSendTransaction(
-  transaction: Transaction,
-  connection: Connection,
-  feePayer: PublicKey,
-  signTransaction: SignerWalletAdapterProps['signTransaction']
-) {
-  const blockHash = await connection.getLatestBlockhash()
-  transaction.feePayer = feePayer
-  transaction.recentBlockhash = blockHash.blockhash
-  const signed = await signTransaction(transaction)
-  const signature = await connection.sendRawTransaction(signed.serialize())
-  await connection.confirmTransaction({
-    blockhash: blockHash.blockhash,
-    lastValidBlockHeight: blockHash.lastValidBlockHeight,
-    signature,
-  })
-  return signature
+export type TokenAccountOwnerPdaData = IdlAccounts<SolanaTokenFinancing>['tokenAccountOwnerPda']
+export type VaultAccountData = IdlAccounts<SolanaTokenFinancing>['vaultAccount']
+export type LoanAccountData = IdlAccounts<SolanaTokenFinancing>['loanAccount']
+
+export const [vaultAccountPDA] = PublicKey.findProgramAddressSync(
+  [Buffer.from('nemeos_vault_account'), MINT_PUBKEY.toBuffer()],
+  program2.programId
+)
+
+export async function fetchAccountTokenAmount(publicKey: PublicKey, mintKey: PublicKey, connection: Connection) {
+  // Derive the associated token account address for the user
+  const associatedTokenAddress = await getAssociatedTokenAddress(
+    mintKey, // Token mint address
+    publicKey, // Owner of the token account
+    false,
+    TOKEN_PROGRAM_ID
+  )
+
+  try {
+    const tokenAccountBalance = await connection.getTokenAccountBalance(associatedTokenAddress)
+    return tokenAccountBalance.value
+  } catch {
+    return null
+  }
+}
+
+export async function fetchAccountUsdcAmount(publicKey: PublicKey, connection: Connection) {
+  return fetchAccountTokenAmount(publicKey, USDC_PUBKEY, connection)
 }
 
 export async function getUserTokenAccountOrGetCreationTransactionInstruction(
@@ -107,18 +114,25 @@ export async function getUserTokenAccountOrGetCreationTransactionInstruction(
   }
 }
 
-export function getNemeosUsdcAccount() {
-  return getAssociatedTokenAddress(
-    USDC_PUBKEY,
-    NEMEOS_PUBKEY,
-    false, // Do not create the token account if it does not exist
-    TOKEN_PROGRAM_ID
-  )
+export async function configureAndSendTransaction(
+  transaction: Transaction,
+  connection: Connection,
+  feePayer: PublicKey,
+  signTransaction: SignerWalletAdapterProps['signTransaction']
+) {
+  const blockHash = await connection.getLatestBlockhash()
+  transaction.feePayer = feePayer
+  transaction.recentBlockhash = blockHash.blockhash
+  const signed = await signTransaction(transaction)
+  const signature = await connection.sendRawTransaction(signed.serialize())
+  await connection.confirmTransaction({
+    blockhash: blockHash.blockhash,
+    lastValidBlockHeight: blockHash.lastValidBlockHeight,
+    signature,
+  })
+  return signature
 }
 
-let [vaultAccount] = PublicKey.findProgramAddressSync([Buffer.from('nemeos_vault_account'), MINT_PUBKEY.toBuffer()], program2.programId)
-
-// Check we can fetch the account from Solana program
-program2.account.vaultAccount.fetch(vaultAccount).then(data => {
-  console.log('vaultAccount', data)
-})
+export function getNemeosUsdcAccount() {
+  return getAssociatedTokenAddress(USDC_PUBKEY, NEMEOS_PUBKEY, false, TOKEN_PROGRAM_ID)
+}
