@@ -11,11 +11,11 @@ export function NavBar() {
         <Image src={SolanaLogo} alt="Solana Logo" width={100} />
       </NavbarBrand>
       <NavbarContent justify="end">
-        <Tooltip placement="bottom" content="Devnet Only">
-          <NavbarItem>
-            <WalletMultiButton />
-          </NavbarItem>
-        </Tooltip>
+        {/* <Tooltip placement="bottom" content="Devnet Only"> */}
+        <NavbarItem>
+          <WalletMultiButton />
+        </NavbarItem>
+        {/* </Tooltip> */}
       </NavbarContent>
     </Navbar>
   )

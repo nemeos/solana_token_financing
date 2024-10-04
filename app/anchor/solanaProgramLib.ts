@@ -5,13 +5,13 @@ import {
   configureAndSendTransaction,
   getNemeosUsdcAccount,
   getUserTokenAccountOrGetCreationTransactionInstruction,
-  program2,
+  program,
   USDC_PUBKEY,
   vaultAccountPDA,
 } from './setup'
 
 export function fetchVaultAccountData() {
-  return program2.account.vaultAccount.fetch(vaultAccountPDA)
+  return program.account.vaultAccount.fetch(vaultAccountPDA)
 }
 
 export async function createLoan(
@@ -51,7 +51,7 @@ export async function createLoan(
     // Bundle createLoan and upfrontPayment
     const transaction = new Transaction()
       .add(
-        await program2.methods
+        await program.methods
           .createLoan(new BN(2), new BN(0), new BN(2))
           .accounts({
             borrower: publicKey,
@@ -62,7 +62,7 @@ export async function createLoan(
           .instruction()
       )
       .add(
-        await program2.methods
+        await program.methods
           .upfrontPayment()
           .accounts({
             borrower: publicKey,
@@ -115,7 +115,7 @@ export async function payLoanStep(
       mint: mintKey,
     })
     const transaction = new Transaction().add(
-      await program2.methods
+      await program.methods
         .payment()
         .accounts({
           borrower: publicKey,
@@ -148,7 +148,7 @@ export async function closeLoan(
       mint: mintKey,
     })
     const transaction = new Transaction().add(
-      await program2.methods
+      await program.methods
         .closeLoan()
         .accounts({
           borrower: publicKey,

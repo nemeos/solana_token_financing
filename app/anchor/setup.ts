@@ -1,36 +1,20 @@
-import { clusterApiUrl, Connection, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js'
+import { Connection, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js'
 import { IdlAccounts, Program } from '@coral-xyz/anchor'
-import { SignerWalletAdapterProps, WalletAdapterNetwork } from '@solana/wallet-adapter-base'
+import { SignerWalletAdapterProps } from '@solana/wallet-adapter-base'
 import { createAssociatedTokenAccountInstruction, getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 
-import idl from './idl.json'
-import type { Counter } from './idlType'
-
-import idl2 from './solana_token_financing.json'
+import solanaTokenFinanceIdlJson from './solana_token_financing.json'
 import type { SolanaTokenFinancing } from './solana_token_financing'
 
-const connection = new Connection(clusterApiUrl(WalletAdapterNetwork.Devnet), 'confirmed')
-
-export const connection2 = new Connection(
+export const connection = new Connection(
   // clusterApiUrl(WalletAdapterNetwork.Devnet)
   'http://localhost:8899',
   'confirmed'
 )
 
-export const program = new Program(idl as Counter, {
-  connection,
-})
-
-export const [mintPDA] = PublicKey.findProgramAddressSync([Buffer.from('mint')], program.programId)
-export const [counterPDA] = PublicKey.findProgramAddressSync([Buffer.from('counter')], program.programId)
-
-export type CounterData = IdlAccounts<Counter>['counter']
-
 // ---------------------------------------------------------------------------------------------
 
-export const program2 = new Program(idl2 as SolanaTokenFinancing, {
-  connection: connection2,
-})
+export const program = new Program(solanaTokenFinanceIdlJson as SolanaTokenFinancing, { connection })
 
 export const MINT_TOKEN_DECIMALS: number = 2
 export const USDC_TOKEN_DECIMALS: number = 6
@@ -45,7 +29,7 @@ export type LoanAccountData = IdlAccounts<SolanaTokenFinancing>['loanAccount']
 
 export const [vaultAccountPDA] = PublicKey.findProgramAddressSync(
   [Buffer.from('nemeos_vault_account'), MINT_PUBKEY.toBuffer()],
-  program2.programId
+  program.programId
 )
 
 export async function fetchAccountTokenAmount(publicKey: PublicKey, mintKey: PublicKey, connection: Connection) {

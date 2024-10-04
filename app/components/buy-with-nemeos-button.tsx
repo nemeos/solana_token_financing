@@ -4,13 +4,14 @@ import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { Button } from '@nextui-org/react'
 import toast, { Toaster } from 'react-hot-toast'
-import { connection2, MINT_PUBKEY } from '../anchor/setup'
+import { connection, MINT_PUBKEY } from '../anchor/setup'
 import { createLoan } from '../anchor/solanaProgramLib'
+import { TOAST_OPTIONS } from '../app/constants'
 
-export default function BuyWithNemeosButton() {
+export function BuyWithNemeosButton() {
   const { publicKey, signTransaction } = useWallet()
+  // TODO: Use the connection from the wallet adapter
   // const { connection } = useConnection()
-  const connection = connection2 // TODO: Use the connection from the wallet adapter
   const [isLoading, setIsLoading] = useState(false)
 
   const onClick = async () => {
@@ -26,16 +27,10 @@ export default function BuyWithNemeosButton() {
         <a href={`https://solana.fm/tx/${transactionSignature}?cluster=devnet-alpha`} target="_blank">
           View on SolanaFM
         </a>,
-        {
-          style: {
-            borderRadius: '10px',
-            background: '#333',
-            color: '#fff',
-          },
-        }
+        TOAST_OPTIONS
       )
-    } catch (error) {
-      console.log(error)
+    } catch (error: any) {
+      toast.error(`Failed to purchase: ${error.name}`, TOAST_OPTIONS)
     } finally {
       setIsLoading(false)
     }

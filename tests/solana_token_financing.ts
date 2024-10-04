@@ -282,7 +282,7 @@ describe("solana_token_financing dApp functional testing", () => {
         const nemeosUsdcAccount = await getAssociatedTokenAddress(
             usdcMint,
             NEMEOS_PUBKEY,
-            false, // Do not create the token account if it does not exist
+            false,
             TOKEN_PROGRAM_ID
         );
         let [vaultAccount] = PublicKey.findProgramAddressSync(
@@ -293,7 +293,7 @@ describe("solana_token_financing dApp functional testing", () => {
         const sellerUsdcAccount = await getAssociatedTokenAddress(
             usdcMint,
             vaultAccountInfo.seller,
-            false, // Do not create the token account if it does not exist
+            false,
             TOKEN_PROGRAM_ID
         );
 
@@ -442,7 +442,7 @@ describe("solana_token_financing dApp functional testing", () => {
         await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount, phantomWalletManualTestPubkey, phantomWalletManualTestUsdcAccount.address, getPhantomWalletManualTestTokenAccount);
         await print_vault(connection, program, mint);
 
-        // TEST : payment 3 (SHOULD FAIL)
+        // TEST : payment 3
         console.log(`*** Payment 3 ***`);
         await wait(3); // wait 3s
         let txPayment3 = await program.methods
@@ -513,7 +513,7 @@ describe("solana_token_financing dApp functional testing", () => {
         await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, borrowerTokenAccount, phantomWalletManualTestPubkey, phantomWalletManualTestUsdcAccount.address, getPhantomWalletManualTestTokenAccount);
         await print_vault(connection, program, mint);
 
-        // TEST : close_loan
+        // TEST : close_vault_accounts
         console.log(`*** Close vault accounts ***`);
         let txCloseVaultAccounts = await program.methods
             .closeVaultAccounts()
