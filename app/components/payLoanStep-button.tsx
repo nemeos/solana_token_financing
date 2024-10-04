@@ -5,22 +5,23 @@ import { useWallet } from '@solana/wallet-adapter-react'
 import { Button } from '@nextui-org/react'
 import toast, { Toaster } from 'react-hot-toast'
 import { connection, MINT_PUBKEY } from '../anchor/setup'
-import { createLoan } from '../anchor/solanaProgramLib'
+import { fetchLoanAccountData, payLoanStep } from '../anchor/solanaProgramLib'
 import { TOAST_OPTIONS } from '../app/constants'
 
-export function BuyWithNemeosButton() {
+export function PayLoanStepButton({ loanAccountData }: { loanAccountData: Awaited<ReturnType<typeof fetchLoanAccountData>> }) {
   const { publicKey, signTransaction } = useWallet()
   // TODO: Use the connection from the wallet adapter
   // const { connection } = useConnection()
   const [isLoading, setIsLoading] = useState(false)
 
-  const onClick = async () => {
+  const onClickPayLoanStep = async () => {
     if (!publicKey || !signTransaction) return
 
     setIsLoading(true)
 
     try {
-      const transactionSignature = await createLoan(publicKey, MINT_PUBKEY, connection, signTransaction)
+      const isLastLoanStep = loanAccountData.nbRemainingPayments === 1
+      const transactionSignature = await payLoanStep(publicKey, MINT_PUBKEY, connection, signTransaction, isLastLoanStep)
       console.log('transactionSignature', transactionSignature)
 
       toast.success(
@@ -30,7 +31,7 @@ export function BuyWithNemeosButton() {
         TOAST_OPTIONS
       )
     } catch (error: any) {
-      toast.error(`Failed to purchase: ${error.name}`, TOAST_OPTIONS)
+      toast.error(`Failed to pay loan step: ${error.name}`, TOAST_OPTIONS)
     } finally {
       setIsLoading(false)
     }
@@ -38,8 +39,8 @@ export function BuyWithNemeosButton() {
 
   return (
     <>
-      <Button className="w-24" onClick={onClick} isLoading={isLoading} isDisabled={!publicKey}>
-        {isLoading ? '' : 'Buy'}
+      <Button className="w-24" onClick={onClickPayLoanStep} isLoading={isLoading} isDisabled={!publicKey}>
+        {isLoading ? '' : 'Pay next loan step'}
       </Button>
       <Toaster position="bottom-center" reverseOrder={false} />
     </>

@@ -88,7 +88,8 @@ export async function payLoanStep(
   publicKey: PublicKey,
   mintKey: PublicKey,
   connection: Connection,
-  signTransaction: SignerWalletAdapterProps['signTransaction']
+  signTransaction: SignerWalletAdapterProps['signTransaction'],
+  isLastLoanStep = false
 ) {
   try {
     const borrowerUsdcPaymentAccountResult = await getUserTokenAccountOrGetCreationTransactionInstruction(
@@ -110,14 +111,15 @@ export async function payLoanStep(
     const vaultAccountData = await fetchVaultAccountData()
     const sellerUsdcAccount = await getAssociatedTokenAddress(USDC_PUBKEY, vaultAccountData.seller, false, TOKEN_PROGRAM_ID)
 
-    console.log('[Payment] *** Pay loan step ***')
+    console.log(isLastLoanStep ? '[Payment] *** Pay last loan step and close loan ***' : '[Payment] *** Pay loan step ***')
     console.log({
       borrower: publicKey,
       sellerPaymentAccount: sellerUsdcAccount,
       borrowerPaymentAccount: borrowerUsdcPaymentAccount,
       mint: mintKey,
     })
-    const transaction = new Transaction().add(
+    const transaction = new Transaction()
+    transaction.add(
       await program.methods
         .payment()
         .accounts({
@@ -128,6 +130,17 @@ export async function payLoanStep(
         })
         .instruction()
     )
+    if (isLastLoanStep) {
+      transaction.add(
+        await program.methods
+          .closeLoan()
+          .accounts({
+            borrower: publicKey,
+            mint: mintKey,
+          })
+          .instruction()
+      )
+    }
     const transactionSignature = await configureAndSendTransaction(transaction, connection, publicKey, signTransaction)
     console.log('[Payment] Success! transactionSignature', transactionSignature)
 
@@ -138,33 +151,10 @@ export async function payLoanStep(
   }
 }
 
-export async function closeLoan(
-  publicKey: PublicKey,
-  mintKey: PublicKey,
-  connection: Connection,
-  signTransaction: SignerWalletAdapterProps['signTransaction']
-) {
-  try {
-    console.log('[CloseLoan] *** Close loan ***')
-    console.log({
-      borrower: publicKey,
-      mint: mintKey,
-    })
-    const transaction = new Transaction().add(
-      await program.methods
-        .closeLoan()
-        .accounts({
-          borrower: publicKey,
-          mint: mintKey,
-        })
-        .instruction()
-    )
-    const transactionSignature = await configureAndSendTransaction(transaction, connection, publicKey, signTransaction)
-    console.log('[CloseLoan] Success! transactionSignature', transactionSignature)
-
-    return transactionSignature
-  } catch (error) {
-    console.error('[CloseLoan] Calling program method failed!', error)
-    throw error
-  }
+export async function fetchLoanAccountData(publicKey: PublicKey, mintKey: PublicKey) {
+  let [loanAccount] = PublicKey.findProgramAddressSync(
+    [Buffer.from('nemeos_loan_account'), mintKey.toBuffer(), publicKey.toBuffer()],
+    program.programId
+  )
+  return program.account.loanAccount.fetch(loanAccount)
 }
