@@ -3,14 +3,14 @@
 import { useEffect, useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import { connection, program, fetchWalletBalances, USDC_PUBKEY, MINT_PUBKEY } from '../anchor/setup'
+import { connection, fetchWalletBalances, USDC_PUBKEY, MINT_PUBKEY } from '../anchor/setup'
 
 export function WalletBalances() {
   const { publicKey } = useWallet()
   // TODO: Use the connection from the wallet adapter
   // const { connection } = useConnection()
   const [walletBalances, setWalletBalances] = useState<Awaited<ReturnType<typeof fetchWalletBalances>> | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   async function readWalletBalances() {
     setIsLoading(true)
@@ -53,12 +53,15 @@ export function WalletBalances() {
       connection.removeAccountChangeListener(subscriptionId2)
       connection.removeAccountChangeListener(subscriptionId3)
     }
-  }, [program])
+  }, [publicKey])
 
   return (
     <div className="text-lg">
-      <h3>Wallet Balances</h3>
-      {isLoading ? (
+      <h3 className="text-xl mb-2 mt-4">Wallet Balances</h3>
+
+      {!publicKey ? (
+        <p>Wallet not connected</p>
+      ) : isLoading ? (
         <p>Loading...</p>
       ) : (
         <>
