@@ -1,4 +1,4 @@
-import { Connection, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js'
+import { Connection, LAMPORTS_PER_SOL, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js'
 import { IdlAccounts, Program } from '@coral-xyz/anchor'
 import { SignerWalletAdapterProps } from '@solana/wallet-adapter-base'
 import { createAssociatedTokenAccountInstruction, getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token'
@@ -51,6 +51,27 @@ export async function fetchAccountTokenAmount(publicKey: PublicKey, mintKey: Pub
 
 export async function fetchAccountUsdcAmount(publicKey: PublicKey, connection: Connection) {
   return fetchAccountTokenAmount(publicKey, USDC_PUBKEY, connection)
+}
+
+export async function fetchWalletBalances(publicKey: PublicKey, connection: Connection) {
+  const balanceSol = await connection.getBalance(publicKey)
+  const balanceAmountUsdc = await fetchAccountUsdcAmount(publicKey, connection)
+  const balanceAmountMintToken = await fetchAccountTokenAmount(publicKey, MINT_PUBKEY, connection)
+  const balances = {
+    balanceSol,
+    balanceSolDisplayString: balanceSol / LAMPORTS_PER_SOL,
+    balanceAmountUsdc,
+    balanceUsdcDisplayString: (balanceAmountUsdc?.uiAmount || 0) / 10 ** USDC_TOKEN_DECIMALS,
+    balanceAmountMintToken,
+    balanceMintTokenDisplayString: (balanceAmountMintToken?.uiAmount || 0) / 10 ** MINT_TOKEN_DECIMALS,
+  }
+  console.log(
+    `Balances of wallet: ` +
+      `${balances.balanceSolDisplayString} SOL, ` +
+      `${balances.balanceUsdcDisplayString} USDC, ` +
+      `${balances.balanceMintTokenDisplayString} MINT`
+  )
+  return balances
 }
 
 export async function getUserTokenAccountOrGetCreationTransactionInstruction(
