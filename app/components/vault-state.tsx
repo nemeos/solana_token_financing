@@ -29,7 +29,7 @@ export function VaultState() {
 
   return (
     <div className="text-lg">
-      <h3>Vault State</h3>
+      <h3 className="text-xl mb-2 mt-4">Vault State</h3>
       <p>Available Tokens: {(vaultAccountData?.availableTokens.toNumber() || -1) / 10 ** MINT_TOKEN_DECIMALS} MINT</p>
       <p>Annual Interest Rate: {vaultAccountData?.annualInterestRate}%</p>
     </div>

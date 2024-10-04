@@ -9,6 +9,7 @@ import {
   USDC_PUBKEY,
   vaultAccountPDA,
 } from './setup'
+import { getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 
 export function fetchVaultAccountData() {
   return program.account.vaultAccount.fetch(vaultAccountPDA)
@@ -39,6 +40,7 @@ export async function createLoan(
     const borrowerUsdcPaymentAccount = borrowerUsdcPaymentAccountResult.associatedTokenAddress
     const nemeosUsdcAccount = await getNemeosUsdcAccount()
     const vaultAccountData = await fetchVaultAccountData()
+    const sellerUsdcAccount = await getAssociatedTokenAddress(USDC_PUBKEY, vaultAccountData.seller, false, TOKEN_PROGRAM_ID)
 
     console.log('[CreateLoan] *** Create loan and pay upfront payment ***')
     console.log({
@@ -46,7 +48,7 @@ export async function createLoan(
       nemeosPaymentAccount: nemeosUsdcAccount,
       borrowerPaymentAccount: borrowerUsdcPaymentAccount,
       mint: mintKey,
-      sellerPaymentAccount: vaultAccountData.seller,
+      sellerPaymentAccount: sellerUsdcAccount,
     })
     // Bundle createLoan and upfrontPayment
     const transaction = new Transaction()
@@ -66,7 +68,7 @@ export async function createLoan(
           .upfrontPayment()
           .accounts({
             borrower: publicKey,
-            sellerPaymentAccount: vaultAccountData.seller,
+            sellerPaymentAccount: sellerUsdcAccount,
             borrowerPaymentAccount: borrowerUsdcPaymentAccount,
             mint: mintKey,
           })
@@ -106,11 +108,12 @@ export async function payLoanStep(
 
     const borrowerUsdcPaymentAccount = borrowerUsdcPaymentAccountResult.associatedTokenAddress
     const vaultAccountData = await fetchVaultAccountData()
+    const sellerUsdcAccount = await getAssociatedTokenAddress(USDC_PUBKEY, vaultAccountData.seller, false, TOKEN_PROGRAM_ID)
 
     console.log('[Payment] *** Pay loan step ***')
     console.log({
       borrower: publicKey,
-      sellerPaymentAccount: vaultAccountData.seller,
+      sellerPaymentAccount: sellerUsdcAccount,
       borrowerPaymentAccount: borrowerUsdcPaymentAccount,
       mint: mintKey,
     })
@@ -119,7 +122,7 @@ export async function payLoanStep(
         .payment()
         .accounts({
           borrower: publicKey,
-          sellerPaymentAccount: vaultAccountData.seller,
+          sellerPaymentAccount: sellerUsdcAccount,
           borrowerPaymentAccount: borrowerUsdcPaymentAccount,
           mint: mintKey,
         })
