@@ -16,6 +16,8 @@ export function fetchVaultAccountData() {
 }
 
 export async function createLoan(
+  selectedLoanLotIndex: number,
+  selectedLoanTypeIndex: number,
   publicKey: PublicKey,
   mintKey: PublicKey,
   connection: Connection,
@@ -44,6 +46,8 @@ export async function createLoan(
 
     console.log('[CreateLoan] *** Create loan and pay upfront payment ***')
     console.log({
+      selectedLoanLotIndex,
+      selectedLoanTypeIndex,
       borrower: publicKey,
       nemeosPaymentAccount: nemeosUsdcAccount,
       borrowerPaymentAccount: borrowerUsdcPaymentAccount,
@@ -54,7 +58,7 @@ export async function createLoan(
     const transaction = new Transaction()
       .add(
         await program.methods
-          .createLoan(new BN(2), new BN(0), new BN(2))
+          .createLoan(new BN(1), new BN(selectedLoanLotIndex), new BN(selectedLoanTypeIndex))
           .accounts({
             borrower: publicKey,
             nemeosPaymentAccount: nemeosUsdcAccount,

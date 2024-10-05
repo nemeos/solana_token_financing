@@ -40,8 +40,7 @@ export function VaultState() {
         <p>Loading...</p>
       ) : (
         <div>
-          <p>Available Tokens: {(vaultAccountData?.availableTokens.toNumber() || -1) / 10 ** MINT_TOKEN_DECIMALS} MINT</p>
-          <p>Annual Interest Rate: {vaultAccountData?.annualInterestRate}%</p>
+          <p>Available For Purchase: {(vaultAccountData?.availableTokens.toNumber() || -1) / 10 ** MINT_TOKEN_DECIMALS} MINT</p>
         </div>
       )}
     </div>

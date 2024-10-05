@@ -30,6 +30,9 @@ export type LoanType = {
   nb_of_payments: number // including upfront
   upfront: number // upfront except fees
   annual_interest_rate: number
+
+  ui_period_duration_display_string: string
+  ui_display_order_index: number
 }
 export const LOANS_TYPES: LoanType[] = [
   {
@@ -37,17 +40,26 @@ export const LOANS_TYPES: LoanType[] = [
     nb_of_payments: 4, // including upfront
     upfront: 25, // upfront except fees
     annual_interest_rate: 20,
+
+    ui_period_duration_display_string: '2 months, pay every 2 weeks',
+    ui_display_order_index: 1,
   },
   {
     period_duration_in_seconds: 60 * 60 * 24 * 30, // payment every 30 days
     nb_of_payments: 11, // including upfront
     upfront: 20, // upfront except fees
     annual_interest_rate: 10,
+
+    ui_period_duration_display_string: '11 months, pay every 30 days',
+    ui_display_order_index: 2,
   },
-  {
-    period_duration_in_seconds: 3, // payment every 3s (for testing only)
-    nb_of_payments: 4, // including upfront
-    upfront: 25, // upfront except fees
-    annual_interest_rate: 20,
-  },
+  // {
+  //   period_duration_in_seconds: 3, // payment every 3s (for testing only)
+  //   nb_of_payments: 4, // including upfront
+  //   upfront: 25, // upfront except fees
+  //   annual_interest_rate: 20,
+
+  //   ui_period_duration_display_string: '12 seconds, pay every 3 seconds',
+  //   ui_display_order_index: 0,
+  // },
 ]
