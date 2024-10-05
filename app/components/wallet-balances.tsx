@@ -57,7 +57,7 @@ export function WalletBalances() {
 
   return (
     <div className="text-lg">
-      <h3 className="text-xl mb-2 mt-4">Wallet Balances</h3>
+      <h3 className="text-xl mb-2 mt-4">Connected Wallet Balances</h3>
 
       {!publicKey ? (
         <p>Wallet not connected</p>

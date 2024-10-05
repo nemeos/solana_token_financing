@@ -39,7 +39,7 @@ export function PayLoanStepButton({ loanAccountData }: { loanAccountData: Awaite
 
   return (
     <>
-      <Button className="w-24" onClick={onClickPayLoanStep} isLoading={isLoading} isDisabled={!publicKey}>
+      <Button onClick={onClickPayLoanStep} isLoading={isLoading} isDisabled={!publicKey}>
         {isLoading ? '' : 'Pay next loan step'}
       </Button>
       <Toaster position="bottom-center" reverseOrder={false} />

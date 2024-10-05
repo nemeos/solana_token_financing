@@ -156,7 +156,7 @@ export async function payLoanStep(
 }
 
 export async function fetchLoanAccountData(publicKey: PublicKey, mintKey: PublicKey) {
-  let [loanAccount] = PublicKey.findProgramAddressSync(
+  const [loanAccount] = PublicKey.findProgramAddressSync(
     [Buffer.from('nemeos_loan_account'), mintKey.toBuffer(), publicKey.toBuffer()],
     program.programId
   )
