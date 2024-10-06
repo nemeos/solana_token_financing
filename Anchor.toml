@@ -7,12 +7,17 @@ skip-lint = false
 [programs.localnet]
 solana_token_financing = "5HfozzNSUjtouPPAUJrqPgC4wnwsqg7akvVstjY11Vec"
 
+[programs.devnet]
+solana_token_financing = "5HfozzNSUjtouPPAUJrqPgC4wnwsqg7akvVstjY11Vec"
+
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
 cluster = "Localnet"
 wallet = "accounts/id.json"
+# cluster = "devnet"
+# wallet = "accounts/deploy.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

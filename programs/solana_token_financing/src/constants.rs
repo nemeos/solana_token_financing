@@ -1,6 +1,6 @@
 use anchor_lang::prelude::Pubkey;
 
-// TEST PUBKEYS
+// TESTNET AND DEVNET PUBKEYS
 pub const USDC_PUBKEY: Pubkey = Pubkey::new_from_array([
     89, 24, 241, 73, 229, 179, 188, 231, 249, 4, 104, 73, 208, 231, 223, 235, 150, 243, 138, 134,
     203, 162, 11, 66, 175, 217, 219, 38, 5, 106, 164, 53,
