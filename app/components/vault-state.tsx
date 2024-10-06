@@ -40,7 +40,11 @@ export function VaultState() {
         <p>Loading...</p>
       ) : (
         <div>
-          <p>Available For Purchase: {(vaultAccountData?.availableTokens.toNumber() || -1) / 10 ** MINT_TOKEN_DECIMALS} MINT</p>
+          {vaultAccountData ? (
+            <p>Available For Purchase: {vaultAccountData.availableTokens.toNumber() / 10 ** MINT_TOKEN_DECIMALS} MINT</p>
+          ) : (
+            <p>Vault account not initialized.</p>
+          )}
         </div>
       )}
     </div>
