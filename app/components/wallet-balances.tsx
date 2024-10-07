@@ -1,9 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Button } from '@nextui-org/react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { getAssociatedTokenAddressSync, TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import toast from 'react-hot-toast'
 import { connection, fetchWalletBalances, USDC_PUBKEY, MINT_PUBKEY } from '../anchor/setup'
+import { TOAST_OPTIONS } from '../app/constants'
 
 export function WalletBalances() {
   const { publicKey } = useWallet()
@@ -17,6 +20,34 @@ export function WalletBalances() {
     try {
       const balances = await fetchWalletBalances(publicKey!, connection)
       setWalletBalances(balances)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  async function airdropUsdc() {
+    if (!publicKey) return
+
+    setIsLoading(true)
+    try {
+      const result = await fetch('/api/airdrop-usdc', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ publicKey: publicKey.toBase58() }),
+      })
+      if (!result.ok) {
+        const errorMessage = (await result.json())?.error
+        const messageToShow = `Failed to airdrop USDC to wallet:${errorMessage}`
+        console.error(messageToShow)
+        toast.error(messageToShow, TOAST_OPTIONS)
+      } else {
+        toast.success('USDC Airdrop successful!', TOAST_OPTIONS)
+        readWalletBalances()
+      }
     } catch (error) {
       console.error(error)
     } finally {
@@ -68,6 +99,14 @@ export function WalletBalances() {
           <p>{walletBalances!.balanceSolDisplayString} SOL</p>
           <p>{walletBalances!.balanceUsdcDisplayString} USDC</p>
           <p>{walletBalances!.balanceMintTokenDisplayString} MINT</p>
+          <div>
+            <Button className="mr-4 mt-2" as="a" href="https://faucet.solana.com/" target="_blank" rel="noopener noreferrer">
+              Airdrop SOL to wallet
+            </Button>
+            <Button className="mr-4 mt-2" onClick={airdropUsdc} isDisabled={!publicKey}>
+              {isLoading ? '' : 'Airdrop USDC to wallet'}
+            </Button>
+          </div>
         </>
       )}
     </div>
