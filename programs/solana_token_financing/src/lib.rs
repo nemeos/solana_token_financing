@@ -7,11 +7,17 @@ pub mod states;
 
 use instructions::*;
 
-declare_id!("5HfozzNSUjtouPPAUJrqPgC4wnwsqg7akvVstjY11Vec");
+declare_id!("EwHaqQucKCZi7Yxwj454QM9MR4gFg3zspmZp3bNwKBwF");
 
 #[program]
 pub mod solana_token_financing {
     use super::*;
+
+    pub fn initialize_token_account_owner_pda(
+        ctx: Context<InitializeTokenAccountOwnerPda>,
+    ) -> Result<()> {
+        instructions::initialize_token_account_owner_pda(ctx)
+    }
 
     pub fn initialize_token_vault(ctx: Context<InitializeTokenAccount>) -> Result<()> {
         instructions::initialize_token_vault(ctx)

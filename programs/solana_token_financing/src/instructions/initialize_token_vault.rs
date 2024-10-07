@@ -17,11 +17,8 @@ pub fn initialize_token_vault(ctx: Context<InitializeTokenAccount>) -> Result<()
 #[derive(Accounts)]
 pub struct InitializeTokenAccount<'info> {
     #[account(
-            init_if_needed,
-            payer = nemeos,
             seeds=[b"token_account_owner_pda"],
             bump,
-            space = 8
     )]
     token_account_owner_pda: Account<'info, TokenAccountOwnerPda>,
 

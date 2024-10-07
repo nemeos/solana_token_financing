@@ -4,11 +4,11 @@
 resolution = true
 skip-lint = false
 
-[programs.localnet]
-solana_token_financing = "5HfozzNSUjtouPPAUJrqPgC4wnwsqg7akvVstjY11Vec"
-
 [programs.devnet]
-solana_token_financing = "5HfozzNSUjtouPPAUJrqPgC4wnwsqg7akvVstjY11Vec"
+solana_token_financing = "EwHaqQucKCZi7Yxwj454QM9MR4gFg3zspmZp3bNwKBwF"
+
+[programs.localnet]
+solana_token_financing = "EwHaqQucKCZi7Yxwj454QM9MR4gFg3zspmZp3bNwKBwF"
 
 [registry]
 url = "https://api.apr.dev"
