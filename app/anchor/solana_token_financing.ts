@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/solana_token_financing.json`.
  */
 export type SolanaTokenFinancing = {
-  "address": "Hpgeu13zWB2NnsmsX84P5mhor8MoYWyqYnm8uWrvuvY6",
+  "address": "HtqUGmzuqaRD4naSAG9qH4T23B8454ZeyZp33UF9wSrU",
   "metadata": {
     "name": "solanaTokenFinancing",
     "version": "0.1.0",
