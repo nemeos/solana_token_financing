@@ -2,6 +2,8 @@
 
 This project has been built from scratch for our participation in the [Solana Colosseum Radar Hackathon](https://www.colosseum.org/radar).
 
+Colosseum Hackathon Project Page: https://arena.colosseum.org/projects/hackathon/nemeos
+
 Learn more about Nemeos at [nemeos.finance](https://nemeos.finance)  
 Join our Discord community 👉 [discord.gg/MfWtspNeMz](https://discord.gg/MfWtspNeMz)
 
@@ -34,6 +36,8 @@ This project is a prototype and is **not production-ready**. It has not been aud
 ⭐ You can try the dapp on Solana Devnet at [solana-hackathon.nemeos.finance](https://solana-hackathon.nemeos.finance)
 
 To start a loan, you need some USDC. Connect your Solana wallet and click on "Airdrop USDC to wallet" to receive some.
+
+In the Devnet deployment, we remove some checks from the Solana program to allow for easier testing. For example, we included the ability to fully pay a loan at any moment, whereas in a production environment, the loan must be paid in installments between pre-defined dates.
 
 ![Dapp screenshot](./screenshot.webp)
 

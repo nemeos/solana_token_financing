@@ -20,6 +20,7 @@ pub fn payment(ctx: Context<Payment>) -> Result<()> {
         return Err(ErrorCode::TooLate.into());
     }
     if loan_account.start_period > now {
+        // Comment-out this line when deploying on Devnet or Testnet for testing purposes
         return Err(ErrorCode::TooEarly.into());
     }
     if loan_account.nb_remaining_payments == 0 {
