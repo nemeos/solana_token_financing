@@ -3,8 +3,12 @@ import { SignerWalletAdapterProps } from '@solana/wallet-adapter-base'
 import { BN } from 'bn.js'
 import {
   configureAndSendTransaction,
+  connection,
+  fetchAccountTokenAmount,
+  fetchWalletBalances,
   getNemeosUsdcAccount,
   getUserTokenAccountOrGetCreationTransactionInstruction,
+  MINT_PUBKEY,
   program,
   USDC_PUBKEY,
   vaultAccountPDA,
@@ -58,6 +62,7 @@ export async function createLoan(
     const transaction = new Transaction()
       .add(
         await program.methods
+          // @ts-ignore
           .createLoan(new BN(1), new BN(selectedLoanLotIndex), new BN(selectedLoanTypeIndex))
           .accounts({
             borrower: publicKey,
@@ -139,6 +144,7 @@ export async function payLoanStep(
         await program.methods
           .closeLoan()
           .accounts({
+            // @ts-ignore
             borrower: publicKey,
             mint: mintKey,
           })

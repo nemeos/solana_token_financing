@@ -5,7 +5,6 @@ import { useWallet } from '@solana/wallet-adapter-react'
 import toast, { Toaster } from 'react-hot-toast'
 import { MINT_PUBKEY } from '../anchor/setup'
 import { fetchLoanAccountData } from '../anchor/solanaProgramLib'
-import { TOAST_OPTIONS } from '../app/constants'
 import { TokenBuyingOptions } from './token-buying-options'
 import { PayLoanStepButton } from './payLoanStep-button'
 

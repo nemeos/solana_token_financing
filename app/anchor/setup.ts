@@ -1,14 +1,23 @@
-import { Connection, LAMPORTS_PER_SOL, PublicKey, Transaction, TransactionInstruction } from '@solana/web3.js'
+import {
+  clusterApiUrl,
+  Connection,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  RpcResponseAndContext,
+  TokenAmount,
+  Transaction,
+  TransactionInstruction,
+} from '@solana/web3.js'
 import { IdlAccounts, Program } from '@coral-xyz/anchor'
-import { SignerWalletAdapterProps } from '@solana/wallet-adapter-base'
+import { SignerWalletAdapterProps, WalletAdapterNetwork } from '@solana/wallet-adapter-base'
 import { createAssociatedTokenAccountInstruction, getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token'
 
 import solanaTokenFinanceIdlJson from './solana_token_financing.json'
 import type { SolanaTokenFinancing } from './solana_token_financing'
 
 export const connection = new Connection(
-  // clusterApiUrl(WalletAdapterNetwork.Devnet)
-  'http://localhost:8899',
+  clusterApiUrl(WalletAdapterNetwork.Devnet),
+  // 'http://localhost:8899',
   'confirmed'
 )
 
@@ -19,9 +28,9 @@ export const program = new Program(solanaTokenFinanceIdlJson as SolanaTokenFinan
 export const MINT_TOKEN_DECIMALS: number = 2
 export const USDC_TOKEN_DECIMALS: number = 6
 
-export const NEMEOS_PUBKEY = new PublicKey('9WnKTizjgyntHrGUuZScLt4hWjqmqmNHzpxQxpsTDvLV')
-export const USDC_PUBKEY = new PublicKey('6zoLyaNoXjBGg68feJv1NKWTacdD6miQsHwzLtue6TfS')
-export const MINT_PUBKEY = new PublicKey('3KXubyatkczxdM7CkWPUcYfHmXYpG5CYEdnfbUWMaEMM')
+export const NEMEOS_PUBKEY = new PublicKey('HjTMrTj1kdp3MhwuxW6jZnUhpCVbibDrNKizEDF1Mu33')
+export const USDC_PUBKEY = new PublicKey('HE5fcroCAV51ANSChXaSNkqYrkNP3kkXFJW7S1B2Uq8w')
+export const MINT_PUBKEY = new PublicKey('7MbXgBQv8ShWpf3k66f4gs6AdEnoeGoC16FBrkdrJTw3')
 
 export type TokenAccountOwnerPdaData = IdlAccounts<SolanaTokenFinancing>['tokenAccountOwnerPda']
 export type VaultAccountData = IdlAccounts<SolanaTokenFinancing>['vaultAccount']
@@ -57,6 +66,18 @@ export async function fetchWalletBalances(publicKey: PublicKey, connection: Conn
   const balanceSol = await connection.getBalance(publicKey)
   const balanceAmountUsdc = await fetchAccountUsdcAmount(publicKey, connection)
   const balanceAmountMintToken = await fetchAccountTokenAmount(publicKey, MINT_PUBKEY, connection)
+
+  let borrowerTokenInfo: RpcResponseAndContext<TokenAmount> | null = null
+  try {
+    const [borrowerTokenAccount] = PublicKey.findProgramAddressSync(
+      [Buffer.from('nemeos_borrower_token_account'), MINT_PUBKEY.toBuffer(), publicKey.toBuffer()],
+      program.programId
+    )
+    borrowerTokenInfo = await connection.getTokenAccountBalance(borrowerTokenAccount)
+  } catch (error) {
+    console.error('Could not fetch borrower token account:', error)
+  }
+
   const balances = {
     balanceSol,
     balanceSolDisplayString: balanceSol / LAMPORTS_PER_SOL,
@@ -64,6 +85,8 @@ export async function fetchWalletBalances(publicKey: PublicKey, connection: Conn
     balanceUsdcDisplayString: balanceAmountUsdc?.uiAmount || 0,
     balanceAmountMintToken,
     balanceMintTokenDisplayString: balanceAmountMintToken?.uiAmount || 0,
+    balanceAmountMintTokenBorrowerAmount: borrowerTokenInfo?.value.amount,
+    balanceAmountMintTokenBorrowerDisplayString: borrowerTokenInfo?.value?.uiAmount || 0,
   }
   console.log(
     `Balances of wallet: ` +

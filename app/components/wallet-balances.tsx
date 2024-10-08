@@ -98,7 +98,10 @@ export function WalletBalances() {
         <>
           <p>{walletBalances!.balanceSolDisplayString} SOL</p>
           <p>{walletBalances!.balanceUsdcDisplayString} USDC</p>
-          <p>{walletBalances!.balanceMintTokenDisplayString} MINT</p>
+          <p>
+            {walletBalances!.balanceMintTokenDisplayString} MINT (Pending in loans:{' '}
+            {walletBalances!.balanceAmountMintTokenBorrowerDisplayString} MINT)
+          </p>
           <div>
             <Button className="mr-4 mt-2" as="a" href="https://faucet.solana.com/" target="_blank" rel="noopener noreferrer">
               Airdrop SOL to wallet
