@@ -7,6 +7,7 @@ import toast, { Toaster } from 'react-hot-toast'
 import { connection, MINT_PUBKEY } from '../anchor/setup'
 import { fetchLoanAccountData, payLoanStep } from '../anchor/solanaProgramLib'
 import { TOAST_OPTIONS } from '../app/constants'
+import { showConfettis } from '../utils'
 
 export function PayLoanStepButton({
   loanAccountData,
@@ -31,10 +32,19 @@ export function PayLoanStepButton({
       const transactionSignature = await payLoanStep(publicKey, MINT_PUBKEY, connection, signTransaction, isLastLoanStep)
       console.log('transactionSignature', transactionSignature)
 
+      if (isLastLoanStep) showConfettis()
       toast.success(
-        <a href={`https://solana.fm/tx/${transactionSignature}?cluster=devnet-alpha`} target="_blank">
-          View on SolanaFM
-        </a>,
+        <p>
+          {isLastLoanStep && (
+            <>
+              Your loan was completed! 🎉
+              <br />
+            </>
+          )}
+          <a href={`https://solana.fm/tx/${transactionSignature}?cluster=devnet-alpha`} target="_blank">
+            View on SolanaFM
+          </a>
+        </p>,
         TOAST_OPTIONS
       )
     } catch (error: any) {
