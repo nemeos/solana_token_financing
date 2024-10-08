@@ -8,7 +8,13 @@ import { connection, MINT_PUBKEY } from '../anchor/setup'
 import { fetchLoanAccountData, payLoanStep } from '../anchor/solanaProgramLib'
 import { TOAST_OPTIONS } from '../app/constants'
 
-export function PayLoanStepButton({ loanAccountData }: { loanAccountData: Awaited<ReturnType<typeof fetchLoanAccountData>> }) {
+export function PayLoanStepButton({
+  loanAccountData,
+  readLoanAccountData,
+}: {
+  loanAccountData: Awaited<ReturnType<typeof fetchLoanAccountData>>
+  readLoanAccountData: () => void
+}) {
   const { publicKey, signTransaction } = useWallet()
   // TODO: Use the connection from the wallet adapter
   // const { connection } = useConnection()
@@ -20,6 +26,7 @@ export function PayLoanStepButton({ loanAccountData }: { loanAccountData: Awaite
     setIsLoading(true)
 
     try {
+      console.log('[Pay next loan step] loanAccountData', loanAccountData)
       const isLastLoanStep = loanAccountData.nbRemainingPayments === 1
       const transactionSignature = await payLoanStep(publicKey, MINT_PUBKEY, connection, signTransaction, isLastLoanStep)
       console.log('transactionSignature', transactionSignature)
@@ -34,6 +41,7 @@ export function PayLoanStepButton({ loanAccountData }: { loanAccountData: Awaite
       toast.error(`Failed to pay loan step: ${error.name}`, TOAST_OPTIONS)
     } finally {
       setIsLoading(false)
+      readLoanAccountData()
     }
   }
 

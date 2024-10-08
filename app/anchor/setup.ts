@@ -65,7 +65,7 @@ export async function fetchAccountUsdcAmount(publicKey: PublicKey, connection: C
 export async function fetchWalletBalances(publicKey: PublicKey, connection: Connection) {
   const balanceSol = await connection.getBalance(publicKey)
   const balanceAmountUsdc = await fetchAccountUsdcAmount(publicKey, connection)
-  const balanceAmountMintToken = await fetchAccountTokenAmount(publicKey, MINT_PUBKEY, connection)
+  // const balanceAmountMintToken = await fetchAccountTokenAmount(publicKey, MINT_PUBKEY, connection)
 
   let borrowerTokenInfo: RpcResponseAndContext<TokenAmount> | null = null
   try {
@@ -83,8 +83,8 @@ export async function fetchWalletBalances(publicKey: PublicKey, connection: Conn
     balanceSolDisplayString: balanceSol / LAMPORTS_PER_SOL,
     balanceAmountUsdc,
     balanceUsdcDisplayString: balanceAmountUsdc?.uiAmount || 0,
-    balanceAmountMintToken,
-    balanceMintTokenDisplayString: balanceAmountMintToken?.uiAmount || 0,
+    // balanceAmountMintToken,
+    // balanceMintTokenDisplayString: balanceAmountMintToken?.uiAmount || 0,
     balanceAmountMintTokenBorrowerAmount: borrowerTokenInfo?.value.amount,
     balanceAmountMintTokenBorrowerDisplayString: borrowerTokenInfo?.value?.uiAmount || 0,
   }
@@ -92,7 +92,7 @@ export async function fetchWalletBalances(publicKey: PublicKey, connection: Conn
     `Balances of wallet: ` +
       `${balances.balanceSolDisplayString} SOL, ` +
       `${balances.balanceUsdcDisplayString} USDC, ` +
-      `${balances.balanceMintTokenDisplayString} MINT`
+      `${balances.balanceAmountMintTokenBorrowerDisplayString} MINT`
   )
   return balances
 }

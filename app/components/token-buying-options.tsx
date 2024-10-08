@@ -45,7 +45,7 @@ export const CustomRadio = (props: any) => {
   )
 }
 
-export function TokenBuyingOptions() {
+export function TokenBuyingOptions({ readLoanAccountData }: { readLoanAccountData: () => void }) {
   const { publicKey, signTransaction } = useWallet()
   // TODO: Use the connection from the wallet adapter
   // const { connection } = useConnection()
@@ -79,6 +79,7 @@ export function TokenBuyingOptions() {
       toast.error(`Failed to purchase: ${error.name}`, TOAST_OPTIONS)
     } finally {
       setIsLoading(false)
+      readLoanAccountData()
     }
   }
 
