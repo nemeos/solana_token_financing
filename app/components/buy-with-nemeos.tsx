@@ -12,7 +12,7 @@ export function BuyWithNemeos() {
   const { publicKey } = useWallet()
   // TODO: Use the connection from the wallet adapter
   // const { connection } = useConnection()
-  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
   const [loanAccountData, setLoanAccountData] = useState<Awaited<ReturnType<typeof fetchLoanAccountData>> | null>(null)
 
   useEffect(() => {
