@@ -3,12 +3,12 @@ import { Keypair, PublicKey } from '@solana/web3.js'
 import { getOrCreateAssociatedTokenAccount, mintTo } from '@solana/spl-token'
 import { connection, USDC_TOKEN_DECIMALS } from '../../../anchor/setup'
 
-const USDC_PUBKEY = new PublicKey('6zoLyaNoXjBGg68feJv1NKWTacdD6miQsHwzLtue6TfS')
+const USDC_PUBKEY = new PublicKey('HE5fcroCAV51ANSChXaSNkqYrkNP3kkXFJW7S1B2Uq8w')
 const adminKeypair = Keypair.fromSecretKey(
   new Uint8Array([
-    119, 116, 86, 157, 172, 224, 88, 90, 91, 159, 5, 156, 159, 37, 145, 82, 53, 143, 37, 162, 110, 177, 254, 238, 121, 122, 28, 161, 185,
-    210, 7, 5, 138, 37, 85, 29, 197, 106, 90, 148, 199, 252, 8, 29, 150, 115, 53, 60, 223, 7, 40, 249, 45, 232, 173, 132, 10, 64, 147, 118,
-    119, 6, 233, 208,
+    227, 136, 41, 186, 120, 160, 105, 75, 146, 4, 212, 155, 166, 21, 19, 61, 201, 241, 48, 104, 167, 149, 253, 185, 200, 101, 186, 219, 140,
+    47, 243, 196, 1, 76, 78, 35, 34, 117, 130, 24, 247, 81, 114, 128, 170, 144, 225, 199, 121, 115, 181, 181, 236, 77, 39, 210, 230, 218, 6,
+    21, 120, 40, 111, 252,
   ])
 )
 

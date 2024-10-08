@@ -1,0 +1,70 @@
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
+/dev/nemeos/solana_token_financing [main|1] $ rm -rf accounts
+/dev/nemeos/solana_token_financing [main|1] $ solana-keygen new --no-bip39-passphrase --outfile accounts/id.json --force
+se --outfile accounts/nemeos.json --force
+solana-keygen new --no-bip39-passphrase --outfile accounts/usdc.json --force
+solana-keygen new --no-bip39-passphrase --outfile accounts/admin.json --force
+solana-keygen new --no-bip39-passphrase --outfile accounts/seller.json --force
+solana-keygen new --no-bip39-passphrase --outfile accounts/borrower.json --force
+solana-keygen new --no-bip39-passphrase --outfile accounts/mint.json --forceGenerating a new keypair
+Wrote new keypair to accounts/id.json
+==========================================================================
+pubkey: 4EvKohe5SBebi4yfrGDERVjG9CovMriFRrEL4sA18JDw
+==========================================================================
+Save this seed phrase to recover your new keypair:
+order add average grab rebuild derive then stick lady talk because science
+==========================================================================
+/dev/nemeos/solana_token_financing [main|1] $ solana-keygen new --no-bip39-passphrase --outfile accounts/nemeos.json --force
+Generating a new keypair
+Wrote new keypair to accounts/nemeos.json
+===============================================================================
+pubkey: HjTMrTj1kdp3MhwuxW6jZnUhpCVbibDrNKizEDF1Mu33
+===============================================================================
+Save this seed phrase to recover your new keypair:
+tortoise brass lizard mammal salad pond wheat bronze accident glass change flat
+===============================================================================
+/dev/nemeos/solana_token_financing [main|1] $ solana-keygen new --no-bip39-passphrase --outfile accounts/usdc.json --force
+Generating a new keypair
+Wrote new keypair to accounts/usdc.json
+==========================================================================
+pubkey: HE5fcroCAV51ANSChXaSNkqYrkNP3kkXFJW7S1B2Uq8w
+==========================================================================
+Save this seed phrase to recover your new keypair:
+dial real tongue head senior genuine dish injury private brass survey feel
+==========================================================================
+/dev/nemeos/solana_token_financing [main|1] $ solana-keygen new --no-bip39-passphrase --outfile accounts/admin.json --force
+Generating a new keypair
+Wrote new keypair to accounts/admin.json
+==============================================================================
+pubkey: 64tm7hWkkRRHMuGQaGuDm2MRRzV7Ez6oudLYyg4PzBu
+==============================================================================
+Save this seed phrase to recover your new keypair:
+dirt city december card silk garlic critic deposit coyote enroll waste holiday
+==============================================================================
+/dev/nemeos/solana_token_financing [main|1] $ solana-keygen new --no-bip39-passphrase --outfile accounts/seller.json --force
+Generating a new keypair
+Wrote new keypair to accounts/seller.json
+====================================================================
+pubkey: BQvGsESSd1Tn8pMvJ4skoAUrcox9MT4iUPdF8oBs1fQH
+====================================================================
+Save this seed phrase to recover your new keypair:
+dizzy junk claim chaos just joke orange jacket brass turn slab river
+====================================================================
+/dev/nemeos/solana_token_financing [main|1] $ solana-keygen new --no-bip39-passphrase --outfile accounts/borrower.json --force
+Generating a new keypair
+Wrote new keypair to accounts/borrower.json
+===========================================================================
+pubkey: r9NqE9ftBf3TQyQq4up6MYfjJoePHYmze6qgrbDtohU
+===========================================================================
+Save this seed phrase to recover your new keypair:
+priority kit drift speak cousin cigar lawn physical text circle equal spike
+===========================================================================
+/dev/nemeos/solana_token_financing [main|1] $ solana-keygen new --no-bip39-passphrase --outfile accounts/mint.json --force
+Generating a new keypair
+Wrote new keypair to accounts/mint.json
+======================================================================================
+pubkey: 7MbXgBQv8ShWpf3k66f4gs6AdEnoeGoC16FBrkdrJTw3
+======================================================================================
+Save this seed phrase to recover your new keypair:
+believe enough service famous ready smooth version cereal fashion cabin holiday pepper
+======================================================================================

@@ -1,5 +1,5 @@
 {
-  "address": "EwHaqQucKCZi7Yxwj454QM9MR4gFg3zspmZp3bNwKBwF",
+  "address": "Hpgeu13zWB2NnsmsX84P5mhor8MoYWyqYnm8uWrvuvY6",
   "metadata": {
     "name": "solana_token_financing",
     "version": "0.1.0",
@@ -608,6 +608,71 @@
       "args": []
     },
     {
+      "name": "initialize_token_account_owner_pda",
+      "discriminator": [
+        242,
+        15,
+        95,
+        209,
+        150,
+        229,
+        28,
+        4
+      ],
+      "accounts": [
+        {
+          "name": "token_account_owner_pda",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  95,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  95,
+                  111,
+                  119,
+                  110,
+                  101,
+                  114,
+                  95,
+                  112,
+                  100,
+                  97
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "nemeos",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "initialize_token_vault",
       "discriminator": [
         64,
@@ -622,7 +687,6 @@
       "accounts": [
         {
           "name": "token_account_owner_pda",
-          "writable": true,
           "pda": {
             "seeds": [
               {
@@ -756,12 +820,7 @@
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         }
       ],
-      "args": [
-        {
-          "name": "annual_interest_rate",
-          "type": "u8"
-        }
-      ]
+      "args": []
     },
     {
       "name": "payment",
@@ -1654,10 +1713,6 @@
           {
             "name": "available_tokens",
             "type": "u64"
-          },
-          {
-            "name": "annual_interest_rate",
-            "type": "u8"
           }
         ]
       }

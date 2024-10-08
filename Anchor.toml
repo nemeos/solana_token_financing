@@ -5,10 +5,10 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-solana_token_financing = "EwHaqQucKCZi7Yxwj454QM9MR4gFg3zspmZp3bNwKBwF"
+solana_token_financing = "Hpgeu13zWB2NnsmsX84P5mhor8MoYWyqYnm8uWrvuvY6"
 
 [programs.localnet]
-solana_token_financing = "EwHaqQucKCZi7Yxwj454QM9MR4gFg3zspmZp3bNwKBwF"
+solana_token_financing = "Hpgeu13zWB2NnsmsX84P5mhor8MoYWyqYnm8uWrvuvY6"
 
 [registry]
 url = "https://api.apr.dev"
@@ -16,8 +16,8 @@ url = "https://api.apr.dev"
 [provider]
 cluster = "Localnet"
 wallet = "accounts/id.json"
-# cluster = "devnet"
-# wallet = "accounts/deploy.json"
+# cluster = "Devnet"
+# wallet = "accounts/nemeos.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 9100000000 tests/**/*.ts"

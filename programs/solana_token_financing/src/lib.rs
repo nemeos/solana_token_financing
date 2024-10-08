@@ -7,7 +7,7 @@ pub mod states;
 
 use instructions::*;
 
-declare_id!("EwHaqQucKCZi7Yxwj454QM9MR4gFg3zspmZp3bNwKBwF");
+declare_id!("Hpgeu13zWB2NnsmsX84P5mhor8MoYWyqYnm8uWrvuvY6");
 
 #[program]
 pub mod solana_token_financing {

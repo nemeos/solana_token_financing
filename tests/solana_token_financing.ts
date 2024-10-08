@@ -13,13 +13,27 @@ import {
 } from '@solana/spl-token';
 import {SolanaTokenFinancing} from "../target/types/solana_token_financing";
 
+/*
+Latest Devnet published addresses:
+
+Nemeos address: HjTMrTj1kdp3MhwuxW6jZnUhpCVbibDrNKizEDF1Mu33
+USDC address: HE5fcroCAV51ANSChXaSNkqYrkNP3kkXFJW7S1B2Uq8w
+Admin address: 64tm7hWkkRRHMuGQaGuDm2MRRzV7Ez6oudLYyg4PzBu
+Seller address: BQvGsESSd1Tn8pMvJ4skoAUrcox9MT4iUPdF8oBs1fQH
+Borrower address: r9NqE9ftBf3TQyQq4up6MYfjJoePHYmze6qgrbDtohU
+Borrower Phantom address: 53oGZxiUoxCBn1JK3tzhFE9Mf29Ci9BVYEtwtHFZDiTn
+USDC Mint address: HE5fcroCAV51ANSChXaSNkqYrkNP3kkXFJW7S1B2Uq8w
+Borrower payment account: 7TfoxmUNbHVE1mSUG9FZfx3iwr8fhEstPTK83MorJnXy
+Phantom wallet manual test USDC account: BnUbq7W2rtowrgJSNfyXEKr3i3Keh9dXMGzAPNjgZ4nz
+Mint address: 7MbXgBQv8ShWpf3k66f4gs6AdEnoeGoC16FBrkdrJTw3
+Seller token account: Ebwbj2BWKDPC2kjY8KdSNkgoyFQaC1F3qWiasDHuu7nc
+*/
+
 const TOKEN_DECIMALS: number = 2;
 const USDC_TOKEN_DECIMALS: number = 6;
 
-const NEMEOS_PUBKEY = new PublicKey("9WnKTizjgyntHrGUuZScLt4hWjqmqmNHzpxQxpsTDvLV");
 const nemeosKeypair = get_keypair_from_json_file("../accounts/nemeos.json");
 
-const USDC_PUBKEY = new PublicKey("6zoLyaNoXjBGg68feJv1NKWTacdD6miQsHwzLtue6TfS");
 const usdcKeypair = get_keypair_from_json_file("../accounts/usdc.json");
 
 const adminKeypair = get_keypair_from_json_file("../accounts/admin.json");
@@ -120,7 +134,11 @@ describe("solana_token_financing dApp functional testing", () => {
     anchor.setProvider(anchor.AnchorProvider.env());
 
     const program = anchor.workspace.SolanaTokenFinancing as Program<SolanaTokenFinancing>;
-    const connection = new Connection('http://127.0.0.1:8899', 'confirmed');
+    const connection = new Connection(
+        'http://127.0.0.1:8899',
+        // 'https://api.devnet.solana.com',
+        'confirmed'
+    );
 
     it("Full workflow", async () => {
         console.log(`*** Initialize accounts and create a SPL token ***`);
@@ -172,6 +190,7 @@ describe("solana_token_financing dApp functional testing", () => {
             USDC_TOKEN_DECIMALS, // Decimals
             usdcKeypair,
         );
+        // const usdcMint = usdcKeypair.publicKey
         console.log('USDC Mint address:', usdcMint.toBase58());
         const borrowerPaymentAccount = await getOrCreateAssociatedTokenAccount(
             connection,
@@ -225,6 +244,7 @@ describe("solana_token_financing dApp functional testing", () => {
             TOKEN_DECIMALS, // Decimals
             mintKeypair,
         );
+        // const mint = mintKeypair.publicKey
         console.log('Mint address:', mint.toBase58());
 
         // Create an associated token account for the seller
@@ -246,6 +266,17 @@ describe("solana_token_financing dApp functional testing", () => {
             1_000 * 10 ** TOKEN_DECIMALS // Amount of tokens to mint (1_000 token)
         );
 
+        await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, undefined, phantomWalletManualTestPubkey, phantomWalletManualTestUsdcAccount.address);
+
+        console.log(`*** Initialize token_account_owner_pda account ***`);
+        let txInitTokenAccountOwner = await program.methods
+            .initializeTokenAccountOwnerPda()
+            .accounts({
+                nemeos: nemeosKeypair.publicKey,
+            })
+            .signers([nemeosKeypair])
+            .rpc();
+        await connection.confirmTransaction(txInitTokenAccountOwner);
         await print_users_accounts(connection, nemeosKeypair.publicKey, nemeosPaymentAccount.address, sellerKeypair.publicKey, sellerPaymentAccount.address, sellerTokenAccount.address, borrowerKeypair.publicKey, borrowerPaymentAccount.address, undefined, phantomWalletManualTestPubkey, phantomWalletManualTestUsdcAccount.address);
 
         // TEST : initialize_token_vault
@@ -281,7 +312,7 @@ describe("solana_token_financing dApp functional testing", () => {
         // Retrieve payment addresses
         const nemeosUsdcAccount = await getAssociatedTokenAddress(
             usdcMint,
-            NEMEOS_PUBKEY,
+            nemeosKeypair.publicKey,
             false,
             TOKEN_PROGRAM_ID
         );
